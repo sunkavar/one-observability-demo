@@ -6,16 +6,18 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using PetSite.Models;
-using Amazon.XRay.Recorder.Handlers.AwsSdk;
+// Xray-To-Otel using Amazon.XRay.Recorder.Handlers.AwsSdk;
 using System.Net.Http;
-using Amazon.XRay.Recorder.Handlers.System.Net;
-using Amazon.XRay.Recorder.Core;
+// Xray-To-Otel using Amazon.XRay.Recorder.Handlers.System.Net;
+// Xray-To-Otel using Amazon.XRay.Recorder.Core;
 using System.Text.Json;
 using Amazon;
 using PetSite.ViewModels;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Configuration;
 using Prometheus;
+using OpenTelemetry.Trace; // Added OpenTelemetry
+using static PetSite.Startup;
 
 namespace PetSite.Controllers
 {
@@ -24,6 +26,8 @@ namespace PetSite.Controllers
         private readonly ILogger<HomeController> _logger;
         private static HttpClient _httpClient;
         private static Variety _variety = new Variety();
+
+        private readonly ActivitySource _activitySource;
 
         private IConfiguration _configuration;
 
@@ -46,14 +50,17 @@ namespace PetSite.Controllers
         private static readonly Gauge PetsWaitingForAdoption = Metrics
             .CreateGauge("petsite_pets_waiting_for_adoption", "Number of pets waiting for adoption.");
 
-        public HomeController(ILogger<HomeController> logger, IConfiguration configuration)
+        public HomeController(ILogger<HomeController> logger, IConfiguration configuration, Instrumentation instrumentation)
         {
-            AWSXRayRecorder.RegisterLogger(LoggingOptions.Console);
             _configuration = configuration;
-            AWSSDKHandler.RegisterXRayForAllServices();
+            // Xray-To-Otel AWSXRayRecorder.RegisterLogger(LoggingOptions.Console);
+            // Xray-To-Otel AWSSDKHandler.RegisterXRayForAllServices();
 
-            _httpClient = new HttpClient(new HttpClientXRayTracingHandler(new HttpClientHandler()));
+            // Xray-To-Otel _httpClient = new HttpClient(new HttpClientXRayTracingHandler(new HttpClientHandler()));
+            // HttpClient will use OTEL instrumentation from configureservices in startup.cs
+            _httpClient = new HttpClient();
             _logger = logger;
+            _activitySource = instrumentation.ActivitySource;
 
             _variety.PetTypes = new List<SelectListItem>()
             {
@@ -96,104 +103,117 @@ namespace PetSite.Controllers
                     break;
             }
             //string searchapiurl = _configuration["searchapiurl"];
-            string searchapiurl = SystemsManagerConfigurationProviderWithReloadExtensions.GetConfiguration(_configuration,"searchapiurl");
+            string searchapiurl = SystemsManagerConfigurationProviderWithReloadExtensions.GetConfiguration(_configuration, "searchapiurl");
             return await _httpClient.GetStringAsync($"{searchapiurl}{searchUri}");
         }
 
         [HttpGet("housekeeping")]
         public async Task<IActionResult> HouseKeeping()
         {
-             Console.WriteLine(
-                $"[{AWSXRayRecorder.Instance.TraceContext.GetEntity().RootSegment.TraceId}][{AWSXRayRecorder.Instance.GetEntity().TraceId}] - In Housekeeping, trying to reset the app.");
-                
-            /*var result = await GetPetDetails(null, null, null);
-            var Pets = JsonSerializer.Deserialize<List<Pet>>(result);
+            // Xray-To-Otel Console.WriteLine(
+            // Xray-To-Otel   $"[{AWSXRayRecorder.Instance.TraceContext.GetEntity().RootSegment.TraceId}][{AWSXRayRecorder.Instance.GetEntity().TraceId}] - In Housekeeping, trying to reset the app.");
 
-            var searchParams = new SearchParams();
-            
-            //string updateadoptionstatusurl = _configuration["updateadoptionstatusurl"];
-            string updateadoptionstatusurl = SystemsManagerConfigurationProviderWithReloadExtensions.GetConfiguration(_configuration,"updateadoptionstatusurl");
-                  
-
-            foreach (var pet in Pets.Where(item => item.availability == "no"))
+            using (var activity = _activitySource.StartActivity("HouseKeeping"))
             {
-                searchParams.pettype = pet.pettype;
-                searchParams.petid = pet.petid;
-                searchParams.petavailability = "yes";
+                activity?.SetTag("operation", "reset_app");
+                _logger.LogInformation("In Housekeeping, trying to reset the app.");
 
-                StringContent putData = new StringContent(JsonSerializer.Serialize(searchParams));
-                await _httpClient.PutAsync(updateadoptionstatusurl, putData);
-            }*/
-            
-            //string cleanupadoptionsurl = _configuration["cleanupadoptionsurl"];
-            string cleanupadoptionsurl = SystemsManagerConfigurationProviderWithReloadExtensions.GetConfiguration(_configuration,"cleanupadoptionsurl");
-            
-            await _httpClient.PostAsync(cleanupadoptionsurl, null);
+                /*var result = await GetPetDetails(null, null, null);
+                var Pets = JsonSerializer.Deserialize<List<Pet>>(result);
 
-            return View();
+                var searchParams = new SearchParams();
+
+                //string updateadoptionstatusurl = _configuration["updateadoptionstatusurl"];
+                string updateadoptionstatusurl = SystemsManagerConfigurationProviderWithReloadExtensions.GetConfiguration(_configuration,"updateadoptionstatusurl");
+
+
+                foreach (var pet in Pets.Where(item => item.availability == "no"))
+                {
+                    searchParams.pettype = pet.pettype;
+                    searchParams.petid = pet.petid;
+                    searchParams.petavailability = "yes";
+
+                    StringContent putData = new StringContent(JsonSerializer.Serialize(searchParams));
+                    await _httpClient.PutAsync(updateadoptionstatusurl, putData);
+                }*/
+
+                //string cleanupadoptionsurl = _configuration["cleanupadoptionsurl"];
+                string cleanupadoptionsurl = SystemsManagerConfigurationProviderWithReloadExtensions.GetConfiguration(_configuration, "cleanupadoptionsurl");
+
+                using (var subActivity = _activitySource.StartActivity("CleanupAdoptions"))
+                {
+                    subActivity?.SetTag("url", cleanupadoptionsurl);
+                    await _httpClient.PostAsync(cleanupadoptionsurl, null);
+                    _logger.LogInformation("Cleanup adoptions completed successfully");
+                }
+
+                return View();
+            }
         }
 
         [HttpGet]
         public async Task<IActionResult> Index(string selectedPetType, string selectedPetColor, string petid)
         {
-            Console.WriteLine(
-                $"AWS_XRAY_DAEMON_ADDRESS:- {Environment.GetEnvironmentVariable("AWS_XRAY_DAEMON_ADDRESS")}");
-                
+            // Xray-To-Otel AWSXRayRecorder.Instance.BeginSubsegment("Calling Search API");
+            // Xray-To-Otel AWSXRayRecorder.Instance.AddMetadata("PetType", selectedPetType);
+            // Xray-To-Otel AWSXRayRecorder.Instance.AddMetadata("PetId", petid);
+            // Xray-To-Otel  AWSXRayRecorder.Instance.AddMetadata("PetColor", selectedPetColor);
 
-            AWSXRayRecorder.Instance.BeginSubsegment("Calling Search API");
-
-            AWSXRayRecorder.Instance.AddMetadata("PetType", selectedPetType);
-            AWSXRayRecorder.Instance.AddMetadata("PetId", petid);
-            AWSXRayRecorder.Instance.AddMetadata("PetColor", selectedPetColor);
-
-            
-            Console.WriteLine(
-                $"[{AWSXRayRecorder.Instance.TraceContext.GetEntity().RootSegment.TraceId}]- Search string - PetType:{selectedPetType} PetColor:{selectedPetColor} PetId:{petid}");
-            
-            // | SegmentId: [{AWSXRayRecorder.Instance.TraceContext.GetEntity().RootSegment.Id}
-            string result;
-
-            try
+            // Add OpenTelemetry span
+            using (var activity = _activitySource.StartActivity("SearchPets"))
             {
-                result = await GetPetDetails(selectedPetType, selectedPetColor, petid);
-            }
-            catch (Exception e)
-            {
-                AWSXRayRecorder.Instance.AddException(e);
-                throw e;
-            }
-            finally
-            {
-                AWSXRayRecorder.Instance.EndSubsegment();
-            }
+                activity?.SetTag("pet.type", selectedPetType);
+                activity?.SetTag("pet.id", petid);
+                activity?.SetTag("pet.color", selectedPetColor);
 
-            var Pets = JsonSerializer.Deserialize<List<Pet>>(result);
+                // LOG_COMMENT Console.WriteLine($"Search string - PetType:{selectedPetType} PetColor:{selectedPetColor} PetId:{petid}");
+                _logger.LogInformation("Searching pets with PetType:{PetType}, PetColor:{PetColor}, PetId:{PetId}",
+                    selectedPetType, selectedPetColor, petid);
 
-            var PetDetails = new PetDetails()
-            {
-                Pets = Pets,
-                Varieties = new Variety
+                string result;
+                try
                 {
-                    PetTypes = _variety.PetTypes,
-                    PetColors = _variety.PetColors,
-                    SelectedPetColor = selectedPetColor,
-                    SelectedPetType = selectedPetType
+                    result = await GetPetDetails(selectedPetType, selectedPetColor, petid);
                 }
-            };
-            AWSXRayRecorder.Instance.AddMetadata("results", System.Text.Json.JsonSerializer.Serialize(PetDetails));
-            Console.WriteLine(
-                $" TraceId: [{AWSXRayRecorder.Instance.GetEntity().TraceId}] - {JsonSerializer.Serialize(PetDetails)}");
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "Failed to retrieve pet details for PetType:{PetType}, PetColor:{PetColor}, PetId:{PetId}",
+                        selectedPetType, selectedPetColor, petid);
+                    // Xray-To-Otel  AWSXRayRecorder.Instance.AddException(e);
+                    activity?.AddException(e); // OTEL exception tracking
+                    throw;
+                }
 
-            // Sets the metric value to the number of pets available for adoption at the moment
-            PetsWaitingForAdoption.Set(Pets.Where(pet => pet.availability == "yes").Count());
+                var Pets = JsonSerializer.Deserialize<List<Pet>>(result);
+                var PetDetails = new PetDetails()
+                {
+                    Pets = Pets,
+                    Varieties = new Variety
+                    {
+                        PetTypes = _variety.PetTypes,
+                        PetColors = _variety.PetColors,
+                        SelectedPetColor = selectedPetColor,
+                        SelectedPetType = selectedPetType
+                    }
+                };
 
-            return View(PetDetails);
+
+                _logger.LogInformation("Retrieved {PetCount} pets", Pets.Count);
+
+                // Xray-To-Otel AWSXRayRecorder.Instance.AddMetadata("results", ...);
+                activity?.SetTag("results", JsonSerializer.Serialize(PetDetails));
+
+                PetsWaitingForAdoption.Set(Pets.Where(pet => pet.availability == "yes").Count());
+                return View(PetDetails);
+            }
+            // Xray-To-Otel AWSXRayRecorder.Instance.EndSubsegment(); // Comment out (handled by using block)
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {
-            return View(new ErrorViewModel {RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier});
+            _logger.LogError("Error occurred, RequestId: {RequestId}", Activity.Current?.Id ?? HttpContext.TraceIdentifier);
+            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
     }
 }

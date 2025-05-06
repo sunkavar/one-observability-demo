@@ -3,60 +3,85 @@ using Microsoft.Extensions.Configuration;
 using System;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Amazon.XRay.Recorder.Core;
-using Amazon.XRay.Recorder.Handlers.System.Net;
-using Amazon.XRay.Recorder.Handlers.AwsSdk;
-
+// Xray-To-Otel using Amazon.XRay.Recorder.Core;
+using OpenTelemetry.Trace; // Added OpenTelemetry
+using static PetSite.Startup;
+using System.Diagnostics;
+using Microsoft.Extensions.Logging;
+// Xray-To-Otel using Amazon.XRay.Recorder.Handlers.System.Net;
+// Xray-To-Otel using Amazon.XRay.Recorder.Handlers.AwsSdk;
 
 namespace PetSite.Controllers
 {
     public class PetFoodController : Controller
     {
-        
         private static HttpClient httpClient;
         private IConfiguration _configuration;
-        
-        public PetFoodController(IConfiguration configuration)
-        
+        private readonly ActivitySource _activitySource;
+        private readonly ILogger<PetFoodController> _logger;
+
+        public PetFoodController(IConfiguration configuration, Instrumentation instrumentation, ILogger<PetFoodController> logger)
         {
-            AWSSDKHandler.RegisterXRayForAllServices();
+            _configuration = configuration;
+            // Xray-To-Otel AWSSDKHandler.RegisterXRayForAllServices();
+
+            // Initialize HttpClient once, relying on OTEL instrumentation from Startup.cs
+            if (httpClient == null)
+            {
+                httpClient = new HttpClient();
+            }
+
+            _activitySource = instrumentation.ActivitySource;
+            _logger = logger;
         }
 
         [HttpGet("/petfood")]
         public async Task<string> Index()
         {
             // X-Ray FTW
-            AWSXRayRecorder.Instance.BeginSubsegment("Calling PetFood");
-            Console.WriteLine($"[{AWSXRayRecorder.Instance.GetEntity().TraceId}][{AWSXRayRecorder.Instance.TraceContext.GetEntity().RootSegment.TraceId}] - Calling PetFood");
-            
-            // Get our data from petfood
-            var httpClient = new HttpClient(new HttpClientXRayTracingHandler(new HttpClientHandler()));
-            string result = await httpClient.GetStringAsync("http://petfood");
-            
-            // Close the segment
-            AWSXRayRecorder.Instance.EndSubsegment();
-            
-            // Return the result!
-            return result;
+            // Xray-To-Otel AWSXRayRecorder.Instance.BeginSubsegment("Calling PetFood");
+            using (var activity = _activitySource.StartActivity("Calling PetFood"))
+            {
+                // Xray-To-Otel Console.WriteLine($"[{AWSXRayRecorder.Instance.GetEntity().TraceId}][{AWSXRayRecorder.Instance.TraceContext.GetEntity().RootSegment.TraceId}] - Calling PetFood");
+                // Console.WriteLine("Calling PetFood");
+                _logger.LogInformation("Calling PetFood service");
+
+                // Get our data from petfood
+                // Xray-To-Otel var httpClient = new HttpClient(new HttpClientXRayTracingHandler(new HttpClientHandler()));
+                string result = await httpClient.GetStringAsync("http://petfood");
+
+                // Close the segment
+                // Xray-To-Otel AWSXRayRecorder.Instance.EndSubsegment();
+
+                // Return the result!
+                _logger.LogInformation("PetFood service returned: {Result}", result);
+                return result;
+            }
         }
-        
+
         [HttpGet("/petfood-metric/{entityId}/{value}")]
         public async Task<string> PetFoodMetric(string entityId, float value)
         {
             // X-Ray FTW
-            AWSXRayRecorder.Instance.BeginSubsegment("Calling PetFood metric");
-            Console.WriteLine("Calling: " + "http://petfood-metric/metric/" + entityId + "/" + value.ToString());
-            Console.WriteLine($"[{AWSXRayRecorder.Instance.GetEntity().TraceId}][{AWSXRayRecorder.Instance.TraceContext.GetEntity().RootSegment.TraceId}] - Calling PetFood metric");            
-            
-            var httpClient = new HttpClient(new HttpClientXRayTracingHandler(new HttpClientHandler()));
-            string result = await httpClient.GetStringAsync("http://petfood-metric/metric/" + entityId + "/" + value.ToString());
+            // Xray-To-Otel AWSXRayRecorder.Instance.BeginSubsegment("Calling PetFood metric");
+            using (var activity = _activitySource.StartActivity("Calling PetFood metric"))
+            {
+                _logger.LogInformation("Calling PetFood metric with EntityId:{EntityId}, Value:{Value}", entityId, value);
+                // Xray-To-Otel Console.WriteLine($"[{AWSXRayRecorder.Instance.GetEntity().TraceId}][{AWSXRayRecorder.Instance.TraceContext.GetEntity().RootSegment.TraceId}] - Calling PetFood metric");
+                // Console.WriteLine($"Calling PetFood metric with entityId={entityId}, value={value}");
 
-            AWSXRayRecorder.Instance.AddAnnotation("entityId", entityId);
-            AWSXRayRecorder.Instance.AddAnnotation("value", value.ToString());
-            AWSXRayRecorder.Instance.EndSubsegment();
-            
-            return result;
+                // Xray-To-Otel var httpClient = new HttpClient(new HttpClientXRayTracingHandler(new HttpClientHandler()));
+                string result = await httpClient.GetStringAsync("http://petfood-metric/metric/" + entityId + "/" + value.ToString());
+
+                // Xray-To-Otel AWSXRayRecorder.Instance.AddAnnotation("entityId", entityId);
+                // Xray-To-Otel AWSXRayRecorder.Instance.AddAnnotation("value", value.ToString());
+                activity?.SetTag("entityId", entityId);
+                activity?.SetTag("value", value);
+
+                // Xray-To-Otel AWSXRayRecorder.Instance.EndSubsegment();
+                _logger.LogInformation("PetFood metric returned: {Result}", result);
+                return result;
+            }
         }
-
     }
 }
