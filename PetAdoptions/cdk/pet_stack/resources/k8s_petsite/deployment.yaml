@@ -39,6 +39,9 @@ spec:
     metadata:
       labels:
         app: petsite
+      annotations:
+        applications.k8s.aws/monitoring: "true"
+        instrumentation.opentelemetry.io/inject-dotnet: "true"
     spec:
       serviceAccountName: petsite-sa
       containers:

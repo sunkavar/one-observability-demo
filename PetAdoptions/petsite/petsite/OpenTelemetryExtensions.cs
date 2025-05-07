@@ -1,10 +1,11 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using OpenTelemetry.Logs;
 using System;
+using OpenTelemetry.Exporter;
 
 namespace PetSite
 {
@@ -12,6 +13,19 @@ namespace PetSite
     {
         public static IServiceCollection AddPetSiteOpenTelemetry(this IServiceCollection services, IConfiguration configuration)
         {
+            // Get the OTLP endpoint from environment variable or use default
+            string otlpEndpoint = Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT") ?? "http://0.0.0.0:4317";
+            
+            // Get the OTLP protocol from environment variable or use default
+            string otlpProtocol = Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL") ?? "grpc";
+            OtlpExportProtocol protocol = otlpProtocol.ToLowerInvariant() switch
+            {
+                "http/protobuf" => OtlpExportProtocol.HttpProtobuf,
+                "http" => OtlpExportProtocol.HttpProtobuf,
+                "grpc" => OtlpExportProtocol.Grpc,
+                _ => OtlpExportProtocol.Grpc // Default to gRPC if unrecognized
+            };
+            
             services.AddOpenTelemetry()
                 .ConfigureResource(resource => resource
                     .AddService("PetSite", serviceVersion: "1.0.0"))
@@ -25,7 +39,8 @@ namespace PetSite
                         .AddConsoleExporter()
                         .AddOtlpExporter(options =>
                         {
-                            options.Endpoint = new Uri(configuration.GetValue<string>("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317"));
+                            options.Endpoint = new Uri(otlpEndpoint);
+                            options.Protocol = protocol;
                         });
                 })
                 .WithLogging(loggingProviderBuilder =>
@@ -34,7 +49,8 @@ namespace PetSite
                         .AddConsoleExporter()
                         .AddOtlpExporter(options =>
                         {
-                            options.Endpoint = new Uri(configuration.GetValue<string>("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317"));
+                            options.Endpoint = new Uri(otlpEndpoint);
+                            options.Protocol = protocol;
                         });
                 });
 
