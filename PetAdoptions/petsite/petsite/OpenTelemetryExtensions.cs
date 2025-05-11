@@ -13,18 +13,45 @@ namespace PetSite
     {
         public static IServiceCollection AddPetSiteOpenTelemetry(this IServiceCollection services, IConfiguration configuration)
         {
-            // Get the OTLP endpoint from environment variable or use default
-            string otlpEndpoint = Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT") ?? "http://0.0.0.0:4317";
+            // Debug environment variables
+            Console.WriteLine("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: " + Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"));
+            Console.WriteLine("OTEL_EXPORTER_OTLP_ENDPOINT: " + Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT"));
+            Console.WriteLine("OTEL_EXPORTER_OTLP_PROTOCOL: " + Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL"));
+            
+            // Get the OTLP traces endpoint from environment variable, fall back to general endpoint, or use default
+            string otlpTracesEndpoint = Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT");
+            if (string.IsNullOrEmpty(otlpTracesEndpoint))
+            {
+                otlpTracesEndpoint = Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT");
+                if (string.IsNullOrEmpty(otlpTracesEndpoint))
+                {
+                    otlpTracesEndpoint = "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/traces";
+                }
+            }
+            Console.WriteLine("Using traces endpoint: " + otlpTracesEndpoint);
             
             // Get the OTLP protocol from environment variable or use default
-            string otlpProtocol = Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL") ?? "grpc";
-            OtlpExportProtocol protocol = otlpProtocol.ToLowerInvariant() switch
+            string otlpProtocol = Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL") ?? "http/protobuf";
+            Console.WriteLine("Using protocol: " + otlpProtocol);
+            OtlpExportProtocol protocol;
+            
+            // Explicitly handle the protocol conversion
+            if (otlpProtocol.ToLowerInvariant() == "http/protobuf" || otlpProtocol.ToLowerInvariant() == "http")
             {
-                "http/protobuf" => OtlpExportProtocol.HttpProtobuf,
-                "http" => OtlpExportProtocol.HttpProtobuf,
-                "grpc" => OtlpExportProtocol.Grpc,
-                _ => OtlpExportProtocol.Grpc // Default to gRPC if unrecognized
-            };
+                protocol = OtlpExportProtocol.HttpProtobuf;
+                Console.WriteLine("Setting protocol to HttpProtobuf");
+            }
+            else if (otlpProtocol.ToLowerInvariant() == "grpc")
+            {
+                protocol = OtlpExportProtocol.Grpc;
+                Console.WriteLine("Setting protocol to Grpc");
+            }
+            else
+            {
+                // Default to HTTP/protobuf for CloudWatch Agent
+                protocol = OtlpExportProtocol.HttpProtobuf;
+                Console.WriteLine("Unrecognized protocol. Defaulting to HttpProtobuf");
+            }
             
             services.AddOpenTelemetry()
                 .ConfigureResource(resource => resource
@@ -39,8 +66,9 @@ namespace PetSite
                         .AddConsoleExporter()
                         .AddOtlpExporter(options =>
                         {
-                            options.Endpoint = new Uri(otlpEndpoint);
+                            options.Endpoint = new Uri(otlpTracesEndpoint);
                             options.Protocol = protocol;
+                            Console.WriteLine($"Configured OTLP Tracing exporter with endpoint: {options.Endpoint} and protocol: {options.Protocol}");
                         });
                 })
                 .WithLogging(loggingProviderBuilder =>
@@ -49,8 +77,9 @@ namespace PetSite
                         .AddConsoleExporter()
                         .AddOtlpExporter(options =>
                         {
-                            options.Endpoint = new Uri(otlpEndpoint);
+                            options.Endpoint = new Uri(otlpTracesEndpoint);
                             options.Protocol = protocol;
+                            Console.WriteLine($"Configured OTLP Logging exporter with endpoint: {options.Endpoint} and protocol: {options.Protocol}");
                         });
                 });
 
