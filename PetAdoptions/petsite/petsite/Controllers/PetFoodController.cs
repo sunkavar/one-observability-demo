@@ -9,13 +9,13 @@ namespace PetSite.Controllers
 {
     public class PetFoodController : Controller
     {
-        private static HttpClient httpClient;
+        private readonly HttpClient _httpClient;
         private IConfiguration _configuration;
         
-        public PetFoodController(IConfiguration configuration)
+        public PetFoodController(IHttpClientFactory httpClientFactory, IConfiguration configuration)
         {
             _configuration = configuration;
-            httpClient = new HttpClient();
+            _httpClient = httpClientFactory.CreateClient();
         }
 
         [HttpGet("/petfood")]
@@ -37,7 +37,7 @@ namespace PetSite.Controllers
                 using (var activity = new Activity("Calling PetFood").Start())
                 {
                     // Get our data from petfood
-                    result = await httpClient.GetStringAsync("http://petfood");
+                    result = await _httpClient.GetStringAsync("http://petfood");
                 }
             }
             catch (Exception e)
@@ -77,7 +77,7 @@ namespace PetSite.Controllers
                         activity.SetTag("value", value.ToString());
                     }
                     
-                    result = await httpClient.GetStringAsync("http://petfood-metric/metric/" + entityId + "/" + value.ToString());
+                    result = await _httpClient.GetStringAsync("http://petfood-metric/metric/" + entityId + "/" + value.ToString());
                 }
             }
             catch (Exception e)

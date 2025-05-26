@@ -15,13 +15,13 @@ namespace PetSite.Controllers
 {
     public class PetListAdoptionsController : Controller
     {
-        private static HttpClient _httpClient;
+        private readonly HttpClient _httpClient;
         private IConfiguration _configuration;
 
-        public PetListAdoptionsController(IConfiguration configuration)
+        public PetListAdoptionsController(IHttpClientFactory httpClientFactory, IConfiguration configuration)
         {
             _configuration = configuration;
-            _httpClient = new HttpClient();
+            _httpClient = httpClientFactory.CreateClient();
         }
 
         // GET

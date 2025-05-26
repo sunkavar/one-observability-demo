@@ -12,13 +12,13 @@ public class PetHistoryController : Controller
 {
     private IConfiguration _configuration;
     private readonly ILogger<HomeController> _logger;
-    private static HttpClient _httpClient;
+    private readonly HttpClient _httpClient;
     private static string _pethistoryurl;
     
-    public PetHistoryController(IConfiguration configuration)
+    public PetHistoryController(IHttpClientFactory httpClientFactory, IConfiguration configuration)
     {
         _configuration = configuration;
-        _httpClient = new HttpClient();
+        _httpClient = httpClientFactory.CreateClient();
         
         _pethistoryurl = _configuration["pethistoryurl"];
         //string _pethistoryurl = SystemsManagerConfigurationProviderWithReloadExtensions.GetConfiguration(_configuration,"pethistoryurl");

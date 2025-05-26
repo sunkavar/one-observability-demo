@@ -28,7 +28,7 @@ namespace PetSite.Controllers
     {
         private static string _txStatus = String.Empty;
 
-        private static HttpClient _httpClient = new HttpClient();
+        private readonly HttpClient _httpClient;
         private static AmazonSQSClient _sqsClient;
         private static IConfiguration _configuration;
 
@@ -36,8 +36,9 @@ namespace PetSite.Controllers
         private static readonly Counter PetAdoptionCount =
             Metrics.CreateCounter("petsite_petadoptions_total", "Count the number of Pets adopted");
 
-        public PaymentController(IConfiguration configuration)
+        public PaymentController(IHttpClientFactory httpClientFactory, IConfiguration configuration)
         {
+            _httpClient = httpClientFactory.CreateClient();
             _configuration = configuration;
             _sqsClient = new AmazonSQSClient(Amazon.Util.EC2InstanceMetadata.Region);
         }

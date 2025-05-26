@@ -14,14 +14,15 @@ namespace PetSite.Controllers
 {
     public class AdoptionController : Controller
     {
-        private static readonly HttpClient HttpClient = new HttpClient();
+        private readonly HttpClient _httpClient;
         private static Variety _variety = new Variety();
         private static IConfiguration _configuration;
 
         private static string _searchApiurl;
 
-        public AdoptionController(IConfiguration configuration)
+        public AdoptionController(IHttpClientFactory httpClientFactory, IConfiguration configuration)
         {
+            _httpClient = httpClientFactory.CreateClient();
             _configuration = configuration;
             
             //_searchApiurl = _configuration["searchapiurl"];
@@ -43,7 +44,7 @@ namespace PetSite.Controllers
             if (!String.IsNullOrEmpty(searchParams.petcolor) && searchParams.petcolor != "all") searchString = $"&{searchString}&petcolor={searchParams.petcolor}";
             if (!String.IsNullOrEmpty(searchParams.petid) && searchParams.petid != "all") searchString = $"&{searchString}&petid={searchParams.petid}";
 
-            return await HttpClient.GetStringAsync($"{_searchApiurl}{searchString}");
+            return await _httpClient.GetStringAsync($"{_searchApiurl}{searchString}");
         }
 
         [HttpPost]

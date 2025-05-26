@@ -3,8 +3,11 @@ using Amazon.Extensions.NETCore.Setup;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 using Prometheus.DotNetRuntime;
 using System.Diagnostics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 
 namespace PetSite
 {
@@ -39,6 +42,19 @@ namespace PetSite
                             configureSource.Optional = true;
                             configureSource.ReloadAfter = TimeSpan.FromMinutes(5);
                         });
+                })
+                .ConfigureServices((hostContext, services) =>
+                {
+                    // Add HttpClient factory
+                    services.AddHttpClient();
+                    
+                    // Configure OpenTelemetry
+                    services.AddOpenTelemetry()
+                        .ConfigureResource(resource => resource
+                            .AddService("PetSite"))
+                        .WithTracing(tracing => tracing
+                            .AddAspNetCoreInstrumentation()
+                            .AddHttpClientInstrumentation());
                 })
                 .ConfigureWebHostDefaults(webBuilder => { webBuilder.UseStartup<Startup>(); });
     }

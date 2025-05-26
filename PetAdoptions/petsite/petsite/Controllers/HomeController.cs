@@ -18,7 +18,7 @@ namespace PetSite.Controllers
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
-        private static HttpClient _httpClient;
+        private readonly HttpClient _httpClient;
         private static Variety _variety = new Variety();
 
         private IConfiguration _configuration;
@@ -42,10 +42,10 @@ namespace PetSite.Controllers
         private static readonly Gauge PetsWaitingForAdoption = Metrics
             .CreateGauge("petsite_pets_waiting_for_adoption", "Number of pets waiting for adoption.");
 
-        public HomeController(ILogger<HomeController> logger, IConfiguration configuration)
+        public HomeController(ILogger<HomeController> logger, IHttpClientFactory httpClientFactory, IConfiguration configuration)
         {
             _configuration = configuration;
-            _httpClient = new HttpClient();
+            _httpClient = httpClientFactory.CreateClient();
             _logger = logger;
 
             _variety.PetTypes = new List<SelectListItem>()
