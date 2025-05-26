@@ -9,9 +9,6 @@ using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using OpenTelemetry.Resources;
-using OpenTelemetry.Trace;
-using OpenTelemetry.Logs;
 using Prometheus;
 using Microsoft.Extensions.Logging;
 
@@ -33,8 +30,7 @@ namespace PetSite
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllersWithViews();
-            services.AddSingleton<Instrumentation>();
-            services.AddPetSiteOpenTelemetry(Configuration);
+            // Removed custom OpenTelemetry configuration to rely on auto-instrumentation
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

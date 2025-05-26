@@ -23,40 +23,27 @@ using Microsoft.Extensions.Configuration;
 using PetSite.Models;
 using Prometheus;
 using Newtonsoft;
-using OpenTelemetry.Trace; // Add OTEL
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
-using static PetSite.Instrumentation;
 
 namespace PetSite.Controllers
 {
     public class PaymentController : Controller
     {
         private static string _txStatus = String.Empty;
-
-        // Xray-To-Otel private static HttpClient _httpClient =
-        // Xray-To-Otel   new HttpClient(new HttpClientXRayTracingHandler(new HttpClientHandler()));
-
         private static HttpClient _httpClient = new HttpClient();
-
         private static AmazonSQSClient _sqsClient;
         private static IConfiguration _configuration;
-
-        private readonly ActivitySource _activitySource;
-
         private readonly ILogger<PaymentController> _logger;
 
         //Prometheus metric to count the number of Pets adopted
         private static readonly Counter PetAdoptionCount =
             Metrics.CreateCounter("petsite_petadoptions_total", "Count the number of Pets adopted");
 
-        public PaymentController(IConfiguration configuration, Instrumentation instrumentation, ILogger<PaymentController> logger)
+        public PaymentController(IConfiguration configuration, ILogger<PaymentController> logger)
         {
-            // Xray-To-Otel AWSSDKHandler.RegisterXRayForAllServices();
             _configuration = configuration;
-
             _sqsClient = new AmazonSQSClient(Amazon.Util.EC2InstanceMetadata.Region);
-            _activitySource = instrumentation.ActivitySource;
             _logger = logger;
         }
 
@@ -72,45 +59,32 @@ namespace PetSite.Controllers
         // [ValidateAntiForgeryToken]
         public async Task<IActionResult> MakePayment(string petId, string pettype)
         {
-            // Xray-To-Otel AWSXRayRecorder.Instance.AddMetadata("PetType", pettype);
-            // Xray-To-Otel AWSXRayRecorder.Instance.AddMetadata("PetId", petId);
-
             ViewData["txStatus"] = "success";
 
             try
             {
-                // Replace X-Ray subsegment with OTEL
-                // Xray-To-Otel AWSXRayRecorder.Instance.BeginSubsegment("Call Payment API");
-                using (var activity = _activitySource.StartActivity("CallPaymentAPI"))
+                // Add custom attributes to the current activity
+                Activity currentActivity = Activity.Current;
+                if (currentActivity != null)
                 {
-                    activity?.SetTag("pet.id", petId);
-                    activity?.SetTag("pet.type", pettype);
-
-                    var result = await PostTransaction(petId, pettype);
-                    // Xray-To-Otel AWSXRayRecorder.Instance.EndSubsegment(); // Handled by using block
-
-                    _logger.LogInformation("Payment API called successfully for PetId:{PetId}, PetType:{PetType}", petId, pettype);
+                    currentActivity.SetTag("pet.id", petId);
+                    currentActivity.SetTag("pet.type", pettype);
+                    currentActivity.SetTag("operation", "make_payment");
                 }
 
-                using (var activity = _activitySource.StartActivity("PostMessageToSQS"))
-                {
-                    var messageResponse = await PostMessageToSqs(petId, pettype);
-                    _logger.LogInformation("Message posted to SQS for PetId:{PetId}, PetType:{PetType}", petId, pettype);
-                }
+                var result = await PostTransaction(petId, pettype);
+                _logger.LogInformation("Payment API called successfully for PetId:{PetId}, PetType:{PetType}", petId, pettype);
 
-                using (var activity = _activitySource.StartActivity("SendNotification"))
-                {
-                    var snsResponse = await SendNotification(petId);
-                    _logger.LogInformation("Notification sent for PetId:{PetId}", petId);
-                }
+                var messageResponse = await PostMessageToSqs(petId, pettype);
+                _logger.LogInformation("Message posted to SQS for PetId:{PetId}, PetType:{PetType}", petId, pettype);
+
+                var snsResponse = await SendNotification(petId);
+                _logger.LogInformation("Notification sent for PetId:{PetId}", petId);
 
                 if ("bunny" == pettype)
                 {
-                    using (var activity = _activitySource.StartActivity("StartStepFunction"))
-                    {
-                        var stepFunctionResult = await StartStepFunctionExecution(petId, pettype);
-                        _logger.LogInformation("Step Function started for PetId:{PetId}, PetType:{PetType}", petId, pettype);
-                    }
+                    var stepFunctionResult = await StartStepFunctionExecution(petId, pettype);
+                    _logger.LogInformation("Step Function started for PetId:{PetId}, PetType:{PetType}", petId, pettype);
                 }
 
                 PetAdoptionCount.Inc();
@@ -122,8 +96,15 @@ namespace PetSite.Controllers
                 ViewData["txStatus"] = "failure";
                 ViewData["error"] = ex.Message;
                 _logger.LogError(ex, "Payment process failed for PetId:{PetId}, PetType:{PetType}", petId, pettype);
-                // Xray-To-Otel AWSXRayRecorder.Instance.AddException(ex); // Comment out
-                Activity.Current?.AddException(ex); // OTEL exception tracking
+                
+                // Add error information to the current activity
+                Activity currentActivity = Activity.Current;
+                if (currentActivity != null)
+                {
+                    currentActivity.SetTag("error", true);
+                    currentActivity.SetTag("error.message", ex.Message);
+                }
+                
                 return View("Index");
             }
         }
@@ -136,8 +117,6 @@ namespace PetSite.Controllers
 
         private async Task<SendMessageResponse> PostMessageToSqs(string petId, string petType)
         {
-            // Xray-To-Otel AWSSDKHandler.RegisterXRay<IAmazonSQS>();
-
             return await _sqsClient.SendMessageAsync(new SendMessageRequest()
             {
                 MessageBody = JsonSerializer.Serialize($"{petId}-{petType}"),
@@ -165,11 +144,7 @@ namespace PetSite.Controllers
             return await _httpClient.PostAsync(SystemsManagerConfigurationProviderWithReloadExtensions.GetConfiguration(_configuration,"petadoptionsstepfnurl"), content);
             
             */
-            // Console.WriteLine($"STEPLOG -ARN - {SystemsManagerConfigurationProviderWithReloadExtensions.GetConfiguration(_configuration,"petadoptionsstepfnarn")}");
-            //Console.WriteLine($"STEPLOG - SERIALIZE - {JsonSerializer.Serialize(new SearchParams() {petid = petId, pettype = petType})}");
 
-
-            // Xray-To-Otel AWSSDKHandler.RegisterXRay<IAmazonStepFunctions>();
             return await new AmazonStepFunctionsClient().StartExecutionAsync(new StartExecutionRequest()
             {
                 Input = JsonSerializer.Serialize(new SearchParams() { petid = petId, pettype = petType }),
@@ -180,12 +155,9 @@ namespace PetSite.Controllers
 
         private async Task<PublishResponse> SendNotification(string petId)
         {
-            // Xray-To-Otel  AWSSDKHandler.RegisterXRay<IAmazonService>();
-
             var snsClient = new AmazonSimpleNotificationServiceClient();
             return await snsClient.PublishAsync(topicArn: _configuration["snsarn"],
                 message: $"PetId {petId} was adopted on {DateTime.Now}");
-
         }
     }
 }

@@ -4,10 +4,6 @@ using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
-// Xray-To-Otel using Amazon.XRay.Recorder.Core;
-// Xray-To-Otel using Amazon.XRay.Recorder.Handlers.AwsSdk;
-// Xray-To-Otel using Amazon.XRay.Recorder.Handlers.System.Net;
-using OpenTelemetry.Trace; // Added OpenTelemetry
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -19,20 +15,17 @@ namespace PetSite.Controllers
 {
     public class AdoptionController : Controller
     {
-        private static readonly HttpClient HttpClient = new HttpClient(); // Removed X-Ray handler, relies on OTEL
+        private static readonly HttpClient HttpClient = new HttpClient();
         private static Variety _variety = new Variety();
         private static IConfiguration _configuration;
         private static string _searchApiurl;
-        private readonly ActivitySource _activitySource;
+        
         private readonly ILogger<AdoptionController> _logger;
 
-        public AdoptionController(IConfiguration configuration, Instrumentation instrumentation, ILogger<AdoptionController> logger)
+        public AdoptionController(IConfiguration configuration, ILogger<AdoptionController> logger)
         {
             _configuration = configuration;
-            //_searchApiurl = _configuration["searchapiurl"];
             _searchApiurl = SystemsManagerConfigurationProviderWithReloadExtensions.GetConfiguration(_configuration, "searchapiurl");
-            _activitySource = instrumentation.ActivitySource;
-            // Xray-To-Otel AWSSDKHandler.RegisterXRayForAllServices();
             _logger = logger;
         }
 
@@ -57,49 +50,50 @@ namespace PetSite.Controllers
         [HttpPost]
         public async Task<IActionResult> TakeMeHome([FromForm] SearchParams searchParams)
         {
-            // Xray-To-Otel Console.WriteLine(
-            //    $"[{AWSXRayRecorder.Instance.TraceContext.GetEntity().RootSegment.TraceId}][{AWSXRayRecorder.Instance.GetEntity().TraceId}] - Inside TakeMehome. Pet in context - PetId:{searchParams.petid}, PetType:{searchParams.pettype}, PetColor:{searchParams.petcolor}");
-            using (var activity = _activitySource.StartActivity("TakeMeHome"))
+            _logger.LogInformation("Inside TakeMeHome - PetId:{PetId}, PetType:{PetType}, PetColor:{PetColor}",
+                searchParams.petid, searchParams.pettype, searchParams.petcolor);
+
+            // Add custom attributes to the current activity
+            Activity currentActivity = Activity.Current;
+            if (currentActivity != null)
             {
-                //Console.WriteLine($"Inside TakeMehome. Pet in context - PetId:{searchParams.petid}, PetType:{searchParams.pettype}, PetColor:{searchParams.petcolor}");
-                _logger.LogInformation("Inside TakeMeHome - PetId:{PetId}, PetType:{PetType}, PetColor:{PetColor}",
-                    searchParams.petid, searchParams.pettype, searchParams.petcolor);
-
-                // Xray-To-Otel AWSXRayRecorder.Instance.AddMetadata("PetType", searchParams.pettype);
-                // Xray-To-Otel AWSXRayRecorder.Instance.AddMetadata("PetId", searchParams.petid);
-                // Xray-To-Otel AWSXRayRecorder.Instance.AddMetadata("PetColor", searchParams.petcolor);
-                activity?.SetTag("pet.type", searchParams.pettype);
-                activity?.SetTag("pet.id", searchParams.petid);
-                activity?.SetTag("pet.color", searchParams.petcolor);
-
-                // Xray-To-Otel String traceId = TraceId.NewId(); // This function is present in : Amazon.XRay.Recorder.Core.Internal.Entities
-                // Xray-To-Otel AWSXRayRecorder.Instance.BeginSubsegment("Calling Search API"); // custom traceId used while creating segment
-                string result;
-
-                try
-                {
-                    using (var subActivity = _activitySource.StartActivity("Calling Search API"))
-                    {
-                        subActivity?.SetTag("url", $"{_searchApiurl}");
-                        result = await GetPetDetails(searchParams);
-                        _logger.LogInformation("Successfully called search API for PetId:{PetId}", searchParams.petid);
-                    }
-                }
-                catch (Exception e)
-                {
-                    _logger.LogError(e, "Failed to call search API for PetId:{PetId}, PetType:{PetType}",
-                        searchParams.petid, searchParams.pettype);
-                    // Xray-To-Otel AWSXRayRecorder.Instance.AddException(e);
-                    activity?.AddException(e); // OTEL exception tracking
-                    throw;
-                }
-                finally
-                {
-                    // Xray-To-Otel AWSXRayRecorder.Instance.EndSubsegment();
-                }
-
-                return View("Index", JsonSerializer.Deserialize<List<Pet>>(result).FirstOrDefault());
+                currentActivity.SetTag("pet.id", searchParams.petid);
+                currentActivity.SetTag("pet.type", searchParams.pettype);
+                currentActivity.SetTag("pet.color", searchParams.petcolor);
+                currentActivity.SetTag("operation", "take_me_home");
             }
+
+            string result;
+
+            try
+            {
+                // Create a sub-span for the search API call
+                using (var searchActivity = Activity.Current?.Source.StartActivity("Calling Search API"))
+                {
+                    if (searchActivity != null)
+                    {
+                        searchActivity.SetTag("url", _searchApiurl);
+                    }
+                    
+                    result = await GetPetDetails(searchParams);
+                    _logger.LogInformation("Successfully called search API for PetId:{PetId}", searchParams.petid);
+                }
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Failed to call search API for PetId:{PetId}, PetType:{PetType}",
+                    searchParams.petid, searchParams.pettype);
+                
+                if (currentActivity != null)
+                {
+                    currentActivity.SetTag("error", true);
+                    currentActivity.SetTag("error.message", e.Message);
+                }
+                
+                throw;
+            }
+
+            return View("Index", JsonSerializer.Deserialize<List<Pet>>(result).FirstOrDefault());
         }
     }
 }
