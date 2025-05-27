@@ -53,8 +53,37 @@ namespace PetSite
                         .ConfigureResource(resource => resource
                             .AddService("PetSite"))
                         .WithTracing(tracing => tracing
-                            .AddAspNetCoreInstrumentation()
-                            .AddHttpClientInstrumentation());
+                            .AddAspNetCoreInstrumentation(options =>
+                            {
+                                options.RecordException = true;
+                                options.EnrichWithHttpRequest = (activity, request) =>
+                                {
+                                    // Ensure custom attributes are propagated
+                                    if (request.RouteValues.TryGetValue("petId", out var petId))
+                                    {
+                                        activity.SetTag("PetId", petId?.ToString());
+                                    }
+                                    if (request.RouteValues.TryGetValue("pettype", out var petType))
+                                    {
+                                        activity.SetTag("PetType", petType?.ToString());
+                                    }
+                                };
+                            })
+                            .AddHttpClientInstrumentation(options =>
+                            {
+                                options.RecordException = true;
+                                options.EnrichWithHttpRequestMessage = (activity, request) =>
+                                {
+                                    // Propagate attributes from parent span to the HTTP client span
+                                    if (Activity.Current != null)
+                                    {
+                                        foreach (var tag in Activity.Current.Tags)
+                                        {
+                                            activity.SetTag(tag.Key, tag.Value);
+                                        }
+                                    }
+                                };
+                            }));
                 })
                 .ConfigureWebHostDefaults(webBuilder => { webBuilder.UseStartup<Startup>(); });
     }

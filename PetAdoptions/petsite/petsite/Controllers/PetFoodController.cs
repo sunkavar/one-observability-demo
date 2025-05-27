@@ -25,7 +25,7 @@ namespace PetSite.Controllers
             var currentActivity = Activity.Current;
             if (currentActivity != null)
             {
-                currentActivity.SetTag("operation", "GetPetFood");
+                currentActivity.SetTag("Operation", "GetPetFood");
                 Console.WriteLine("Calling PetFood");
             }
             
@@ -36,6 +36,11 @@ namespace PetSite.Controllers
                 // Create a new activity for the API call
                 using (var activity = new Activity("Calling PetFood").Start())
                 {
+                    if (activity != null)
+                    {
+                        activity.SetTag("Operation", "GetPetFood");
+                    }
+                    
                     // Get our data from petfood
                     result = await _httpClient.GetStringAsync("http://petfood");
                 }
@@ -57,9 +62,9 @@ namespace PetSite.Controllers
             var currentActivity = Activity.Current;
             if (currentActivity != null)
             {
-                currentActivity.SetTag("operation", "PetFoodMetric");
-                currentActivity.SetTag("entityId", entityId);
-                currentActivity.SetTag("value", value.ToString());
+                currentActivity.SetTag("Operation", "PetFoodMetric");
+                currentActivity.SetTag("EntityId", entityId);
+                currentActivity.SetTag("Value", value.ToString());
                 
                 Console.WriteLine("Calling: " + "http://petfood-metric/metric/" + entityId + "/" + value.ToString());
             }
@@ -73,8 +78,9 @@ namespace PetSite.Controllers
                 {
                     if (activity != null)
                     {
-                        activity.SetTag("entityId", entityId);
-                        activity.SetTag("value", value.ToString());
+                        activity.SetTag("Operation", "PetFoodMetric");
+                        activity.SetTag("EntityId", entityId);
+                        activity.SetTag("Value", value.ToString());
                     }
                     
                     result = await _httpClient.GetStringAsync("http://petfood-metric/metric/" + entityId + "/" + value.ToString());
