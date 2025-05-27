@@ -67,6 +67,24 @@ namespace PetSite
                                     {
                                         activity.SetTag("PetType", petType?.ToString());
                                     }
+                                    if (request.RouteValues.TryGetValue("petcolor", out var petColor))
+                                    {
+                                        activity.SetTag("PetColor", petColor?.ToString());
+                                    }
+                                    
+                                    // Also check query parameters for these values
+                                    if (request.Query.TryGetValue("petId", out var qPetId))
+                                    {
+                                        activity.SetTag("PetId", qPetId.ToString());
+                                    }
+                                    if (request.Query.TryGetValue("petType", out var qPetType))
+                                    {
+                                        activity.SetTag("PetType", qPetType.ToString());
+                                    }
+                                    if (request.Query.TryGetValue("petColor", out var qPetColor))
+                                    {
+                                        activity.SetTag("PetColor", qPetColor.ToString());
+                                    }
                                 };
                             })
                             .AddHttpClientInstrumentation(options =>
