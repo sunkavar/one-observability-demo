@@ -48,13 +48,6 @@ namespace PetSite
                     // Add HttpClient factory
                     services.AddHttpClient();
                     
-                    // Configure OpenTelemetry
-                    services.AddOpenTelemetry()
-                        .ConfigureResource(resource => resource
-                            .AddService("PetSite"))
-                        .WithTracing(tracing => tracing
-                            .AddAspNetCoreInstrumentation()
-                            .AddHttpClientInstrumentation());
                 })
                 .ConfigureWebHostDefaults(webBuilder => { webBuilder.UseStartup<Startup>(); });
     }
