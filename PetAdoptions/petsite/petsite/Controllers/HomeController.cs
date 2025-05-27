@@ -112,9 +112,9 @@ namespace PetSite.Controllers
             var currentActivity = Activity.Current;
             if (currentActivity != null)
             {
-                currentActivity.SetTag("PetId", petid);
-                currentActivity.SetTag("PetType", selectedPetType);
-                currentActivity.SetTag("PetColor", selectedPetColor);
+                currentActivity.SetTag("pet.type", selectedPetType);
+                currentActivity.SetTag("pet.color", selectedPetColor);
+                currentActivity.SetTag("pet.id", petid);
                 
                 Console.WriteLine($"Search string - PetType:{selectedPetType} PetColor:{selectedPetColor} PetId:{petid}");
             }
@@ -128,9 +128,9 @@ namespace PetSite.Controllers
                 {
                     if (activity != null)
                     {
-                        activity.SetTag("PetId", petid);
-                        activity.SetTag("PetType", selectedPetType);
-                        activity.SetTag("PetColor", selectedPetColor);
+                        activity.SetTag("pet.type", selectedPetType);
+                        activity.SetTag("pet.color", selectedPetColor);
+                        activity.SetTag("pet.id", petid);
                     }
                     
                     result = await GetPetDetails(selectedPetType, selectedPetColor, petid);

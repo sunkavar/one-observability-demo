@@ -54,9 +54,9 @@ namespace PetSite.Controllers
             var currentActivity = Activity.Current;
             if (currentActivity != null)
             {
-                currentActivity.SetTag("PetId", searchParams.petid);
-                currentActivity.SetTag("PetType", searchParams.pettype);
-                currentActivity.SetTag("PetColor", searchParams.petcolor);
+                currentActivity.SetTag("pet.id", searchParams.petid);
+                currentActivity.SetTag("pet.type", searchParams.pettype);
+                currentActivity.SetTag("pet.color", searchParams.petcolor);
                 
                 Console.WriteLine($"Processing adoption request - PetId:{searchParams.petid}, PetType:{searchParams.pettype}, PetColor:{searchParams.petcolor}");
             }
@@ -70,9 +70,9 @@ namespace PetSite.Controllers
                 {
                     if (activity != null)
                     {
-                        activity.SetTag("PetId", searchParams.petid);
-                        activity.SetTag("PetType", searchParams.pettype);
-                        activity.SetTag("PetColor", searchParams.petcolor);
+                        activity.SetTag("pet.id", searchParams.petid);
+                        activity.SetTag("pet.type", searchParams.pettype);
+                        activity.SetTag("pet.color", searchParams.petcolor);
                     }
                     
                     result = await GetPetDetails(searchParams);

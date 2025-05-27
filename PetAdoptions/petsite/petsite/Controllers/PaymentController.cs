@@ -59,8 +59,8 @@ namespace PetSite.Controllers
             var currentActivity = Activity.Current;
             if (currentActivity != null)
             {
-                currentActivity.SetTag("PetId", petId);
-                currentActivity.SetTag("PetType", pettype);
+                currentActivity.SetTag("pet.id", petId);
+                currentActivity.SetTag("pet.type", pettype);
                 
                 Console.WriteLine($"Inside MakePayment Action method - PetId:{petId} - PetType:{pettype}");
             }
@@ -74,8 +74,8 @@ namespace PetSite.Controllers
                 {
                     if (activity != null)
                     {
-                        activity.SetTag("PetId", petId);
-                        activity.SetTag("PetType", pettype);
+                        activity.SetTag("pet.id", petId);
+                        activity.SetTag("pet.type", pettype);
                     }
                     
                     var result = await PostTransaction(petId, pettype);
@@ -86,8 +86,8 @@ namespace PetSite.Controllers
                 {
                     if (activity != null)
                     {
-                        activity.SetTag("PetId", petId);
-                        activity.SetTag("PetType", pettype);
+                        activity.SetTag("pet.id", petId);
+                        activity.SetTag("pet.type", pettype);
                     }
                     
                     var messageResponse = await PostMessageToSqs(petId, pettype);
@@ -98,8 +98,8 @@ namespace PetSite.Controllers
                 {
                     if (activity != null)
                     {
-                        activity.SetTag("PetId", petId);
-                        activity.SetTag("PetType", pettype);
+                        activity.SetTag("pet.id", petId);
+                        activity.SetTag("pet.type", pettype);
                     }
                     
                     var snsResponse = await SendNotification(petId);
@@ -112,8 +112,8 @@ namespace PetSite.Controllers
                     {
                         if (activity != null)
                         {
-                            activity.SetTag("PetId", petId);
-                            activity.SetTag("PetType", pettype);
+                            activity.SetTag("pet.id", petId);
+                            activity.SetTag("pet.type", pettype);
                         }
                         
                         var stepFunctionResult = await StartStepFunctionExecution(petId, pettype);

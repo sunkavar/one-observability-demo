@@ -35,7 +35,7 @@ public class PetHistoryController : Controller
         var currentActivity = Activity.Current;
         if (currentActivity != null)
         {
-            currentActivity.SetTag("Operation", "GetPetAdoptionsHistory");
+            currentActivity.SetTag("operation", "GetPetAdoptionsHistory");
         }
         
         try
@@ -43,11 +43,6 @@ public class PetHistoryController : Controller
             // Create a new activity for the API call
             using (var activity = new Activity("Calling GetPetAdoptionsHistory").Start())
             {
-                if (activity != null)
-                {
-                    activity.SetTag("Operation", "GetPetAdoptionsHistory");
-                }
-                
                 ViewData["pethistory"] = await _httpClient.GetStringAsync($"{_pethistoryurl}/api/home/transactions");
             }
         }
@@ -71,7 +66,7 @@ public class PetHistoryController : Controller
         var currentActivity = Activity.Current;
         if (currentActivity != null)
         {
-            currentActivity.SetTag("Operation", "DeletePetAdoptionsHistory");
+            currentActivity.SetTag("operation", "DeletePetAdoptionsHistory");
         }
         
         try
@@ -79,11 +74,6 @@ public class PetHistoryController : Controller
             // Create a new activity for the API call
             using (var activity = new Activity("Calling DeletePetAdoptionsHistory").Start())
             {
-                if (activity != null)
-                {
-                    activity.SetTag("Operation", "DeletePetAdoptionsHistory");
-                }
-                
                 ViewData["pethistory"] = await _httpClient.DeleteAsync($"{_pethistoryurl}/api/home/transactions");
             }
         }

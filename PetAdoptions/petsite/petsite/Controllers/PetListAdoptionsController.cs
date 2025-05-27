@@ -31,7 +31,6 @@ namespace PetSite.Controllers
             var currentActivity = Activity.Current;
             if (currentActivity != null)
             {
-                currentActivity.SetTag("Operation", "GetPetListAdoptions");
                 Console.WriteLine("Calling PetListAdoptions API");
             }
 
@@ -43,11 +42,6 @@ namespace PetSite.Controllers
                 // Create a new activity for the API call
                 using (var activity = new Activity("Calling PetListAdoptions").Start())
                 {
-                    if (activity != null)
-                    {
-                        activity.SetTag("Operation", "GetPetListAdoptions");
-                    }
-                    
                     string petlistadoptionsurl = SystemsManagerConfigurationProviderWithReloadExtensions.GetConfiguration(_configuration,"petlistadoptionsurl");
                     result = await _httpClient.GetStringAsync($"{petlistadoptionsurl}");
                     Pets = JsonSerializer.Deserialize<List<Pet>>(result);
