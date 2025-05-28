@@ -129,6 +129,7 @@ namespace PetSite.Controllers
                 ViewData["error"] = ex.Message;
                 
                 // Log the exception
+                Activity.Current?.RecordException(ex);
                 Console.WriteLine($"Error in MakePayment: {ex.Message}");
                 
                 return View("Index");

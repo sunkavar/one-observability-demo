@@ -96,7 +96,16 @@ namespace PetSite.Controllers
         [HttpGet("housekeeping")]
         public async Task<IActionResult> HouseKeeping()
         {
-            Console.WriteLine("In Housekeeping, trying to reset the app.");
+            var currentActivity = Activity.Current;
+            if (currentActivity != null)
+            {
+                Console.WriteLine(
+                    $"[{currentActivity.TraceId}][{currentActivity.SpanId}] - In Housekeeping, trying to reset the app.");
+            }
+            else
+            {
+                Console.WriteLine("In Housekeeping, trying to reset the app.");
+            }
             
             string cleanupadoptionsurl = SystemsManagerConfigurationProviderWithReloadExtensions.GetConfiguration(_configuration,"cleanupadoptionsurl");
             
@@ -138,6 +147,7 @@ namespace PetSite.Controllers
             }
             catch (Exception e)
             {
+                Activity.Current?.RecordException(e);
                 Console.WriteLine($"Error calling search API: {e.Message}");
                 throw;
             }

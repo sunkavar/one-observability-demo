@@ -48,6 +48,7 @@ public class PetHistoryController : Controller
         }
         catch (Exception e)
         {
+            Activity.Current?.RecordException(e);
             Console.WriteLine($"Error calling GetPetAdoptionsHistory: {e.Message}");
             throw;
         }
@@ -79,6 +80,7 @@ public class PetHistoryController : Controller
         }
         catch (Exception e)
         {
+            Activity.Current?.RecordException(e);
             Console.WriteLine($"Error calling DeletePetAdoptionsHistory: {e.Message}");
             throw;
         }

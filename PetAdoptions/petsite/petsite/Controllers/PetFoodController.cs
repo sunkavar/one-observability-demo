@@ -82,6 +82,7 @@ namespace PetSite.Controllers
             }
             catch (Exception e)
             {
+                Activity.Current?.RecordException(e);
                 Console.WriteLine($"Error calling PetFood metric: {e.Message}");
                 throw;
             }

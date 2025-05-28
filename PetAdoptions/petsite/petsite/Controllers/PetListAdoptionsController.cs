@@ -49,6 +49,7 @@ namespace PetSite.Controllers
             }
             catch (Exception e)
             {
+                Activity.Current?.RecordException(e);
                 Console.WriteLine($"Error calling PetListAdoptions API: {e.Message}");
                 throw;
             }

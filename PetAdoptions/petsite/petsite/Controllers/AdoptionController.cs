@@ -53,18 +53,20 @@ namespace PetSite.Controllers
             var currentActivity = Activity.Current;
             if (currentActivity != null)
             {
+                // Log trace ID (equivalent to X-Ray trace ID logging)
+                Console.WriteLine(
+                    $"[{currentActivity.TraceId}][{currentActivity.SpanId}] - Inside TakeMehome. Pet in context - PetId:{searchParams.petid}, PetType:{searchParams.pettype}, PetColor:{searchParams.petcolor}");
+                
                 currentActivity.SetTag("pet.id", searchParams.petid);
                 currentActivity.SetTag("pet.type", searchParams.pettype);
-                currentActivity.SetTag("pet.color", searchParams.petcolor);
-                
-                Console.WriteLine($"Processing adoption request - PetId:{searchParams.petid}, PetType:{searchParams.pettype}, PetColor:{searchParams.petcolor}");
+                currentActivity.SetTag("pet.color", searchParams.petcolor);    
             }
             
             string result;
             
             try
             {
-                // Create a new activity for the API call
+                // Create a new subsegment
                 using (var activity = new Activity("Calling Search API").Start())
                 {
                     if (activity != null)
@@ -80,6 +82,7 @@ namespace PetSite.Controllers
             catch (Exception e)
             {
                 // Log the exception
+                Activity.Current?.RecordException(e);
                 Console.WriteLine($"Error calling search API: {e.Message}");
                 throw;
             }

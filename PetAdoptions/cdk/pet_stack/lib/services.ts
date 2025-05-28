@@ -395,35 +395,6 @@ export class Services extends Stack {
         });
         cwserviceaccount.assumeRolePolicy?.addStatements(cw_trustRelationship);
 
-        // Comment out X-Ray service account for petsite
-        /*
-        const xray_federatedPrincipal = new iam.FederatedPrincipal(
-            cluster.openIdConnectProvider.openIdConnectProviderArn,
-            {
-                StringEquals: new CfnJson(this, "Xray_FederatedPrincipalCondition", {
-                    value: {
-                        [`oidc.eks.${region}.amazonaws.com/id/${clusterId}:aud`]: "sts.amazonaws.com"
-                    }
-                })
-            }
-        );
-        const xray_trustRelationship = new iam.PolicyStatement({
-            effect: iam.Effect.ALLOW,
-            principals: [xray_federatedPrincipal],
-            actions: ["sts:AssumeRoleWithWebIdentity"]
-        });
-
-        // X-Ray Agent SA
-        const xrayserviceaccount = new iam.Role(this, 'XRayServiceAccount', {
-            //                assumedBy: eksFederatedPrincipal,
-            assumedBy: new iam.AccountRootPrincipal(),
-            managedPolicies: [
-                iam.ManagedPolicy.fromManagedPolicyArn(this, 'XRayServiceAccount-AWSXRayDaemonWriteAccess', 'arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess')
-            ],
-        });
-        xrayserviceaccount.assumeRolePolicy?.addStatements(xray_trustRelationship);
-        */
-
         const loadbalancer_federatedPrincipal = new iam.FederatedPrincipal(
             cluster.openIdConnectProvider.openIdConnectProviderArn,
             {
@@ -459,18 +430,6 @@ export class Services extends Stack {
                 })
             ]);
         }
-
-        // Comment out X-Ray deployment for petsite
-        /*
-        var xRayYaml = yaml.loadAll(readFileSync("./resources/k8s_petsite/xray-daemon-config.yaml", "utf8")) as Record<string, any>[];
-
-        xRayYaml[0].metadata.annotations["eks.amazonaws.com/role-arn"] = new CfnJson(this, "xray_Role", { value: `${xrayserviceaccount.roleArn}` });
-
-        const xrayManifest = new eks.KubernetesManifest(this, "xraydeployment", {
-            cluster: cluster,
-            manifest: xRayYaml
-        });
-        */
 
         var loadBalancerServiceAccountYaml = yaml.loadAll(readFileSync("./resources/load_balancer/service_account.yaml", "utf8")) as Record<string, any>[];
         loadBalancerServiceAccountYaml[0].metadata.annotations["eks.amazonaws.com/role-arn"] = new CfnJson(this, "loadBalancer_Role", { value: `${loadBalancerserviceaccount.roleArn}` });
@@ -665,7 +624,6 @@ export class Services extends Stack {
         this.createOuputs(new Map(Object.entries({
             'CWServiceAccountArn': cwserviceaccount.roleArn,
             'NetworkFlowMonitorServiceAccountArn': networkFlowMonitorRole.attrArn,
-            //'XRayServiceAccountArn': xrayserviceaccount.roleArn,
             'OIDCProviderUrl': cluster.clusterOpenIdConnectIssuerUrl,
             'OIDCProviderArn': cluster.openIdConnectProvider.openIdConnectProviderArn,
             'PetSiteUrl': `http://${alb.loadBalancerDnsName}`,
