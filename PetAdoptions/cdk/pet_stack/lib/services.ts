@@ -240,7 +240,7 @@ export class Services extends Stack {
             //repositoryURI: repositoryURI,
             healthCheck: '/health/status',
             desiredTaskCount: 2,
-            instrumentation: 'cloudwatch',
+            instrumentation: 'otel',
             serviceName: 'PetSearch',
             region: region,
             securityGroup: ecsServicesSecurityGroup

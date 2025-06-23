@@ -131,8 +131,8 @@ export abstract class EcsService extends Construct {
         break;
       }
 
-      // CloudWatch Application Signals integration
-      case "cloudwatch": {
+      // CloudWatch Application Signals integration (replaces OTEL collector)
+      case "otel": {
         if (props.serviceName) {
           new appsignals.ApplicationSignalsIntegration(this, 'ApplicationSignalsIntegration', {
             taskDefinition: this.taskDefinition,
@@ -148,13 +148,6 @@ export abstract class EcsService extends Construct {
             }
           });
         }
-        break;
-      }
-
-      // This collector would be used for both traces collected using
-      // open telemetry or X-Ray
-      case "otel": {
-        this.addOtelCollectorContainer(this.taskDefinition, logging);
         break;
       }
 
@@ -204,16 +197,6 @@ export abstract class EcsService extends Construct {
     }).addPortMappings({
       containerPort: 2000,
       protocol: ecs.Protocol.UDP
-    });
-  }
-
-  private addOtelCollectorContainer(taskDefinition: ecs.FargateTaskDefinition, logging: ecs.AwsLogDriver) {
-    taskDefinition.addContainer('aws-otel-collector', {
-      image: ecs.ContainerImage.fromRegistry('public.ecr.aws/aws-observability/aws-otel-collector:v0.41.1'),
-      memoryLimitMiB: 256,
-      cpu: 256,
-      command: ["--config", "/etc/ecs/ecs-xray.yaml"],
-      logging
     });
   }
 }
