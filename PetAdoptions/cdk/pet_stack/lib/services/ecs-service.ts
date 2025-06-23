@@ -4,6 +4,7 @@ import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as ecs_patterns from 'aws-cdk-lib/aws-ecs-patterns';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import * as appsignals from '@aws-cdk/aws-applicationsignals-alpha';
 import { Construct } from 'constructs'
 
 export interface EcsServiceProps {
@@ -17,6 +18,7 @@ export interface EcsServiceProps {
 
   disableService?: boolean,
   instrumentation?: string,
+  serviceName?: string,
 
   repositoryURI?: string,
 
@@ -126,6 +128,26 @@ export abstract class EcsService extends Construct {
 
       // we don't add any sidecar if instrumentation is none
       case "none": {
+        break;
+      }
+
+      // CloudWatch Application Signals integration
+      case "cloudwatch": {
+        if (props.serviceName) {
+          new appsignals.ApplicationSignalsIntegration(this, 'ApplicationSignalsIntegration', {
+            taskDefinition: this.taskDefinition,
+            instrumentation: {
+              sdkVersion: appsignals.JavaInstrumentationVersion.V2_10_0,
+            },
+            serviceName: props.serviceName,
+            cloudWatchAgentSidecar: {
+              containerName: 'ecs-cwagent',
+              enableLogging: true,
+              cpu: 256,
+              memoryLimitMiB: 512,
+            }
+          });
+        }
         break;
       }
 
