@@ -40,7 +40,7 @@ namespace PetSite.Controllers
             try
             {
                 // Create a new activity for the API call
-                using (var activity = new Activity("Calling PetListAdoptions").Start())
+                using (var activity = Activity.Current?.Source?.StartActivity("Calling PetListAdoptions API"))
                 {
                     string petlistadoptionsurl = SystemsManagerConfigurationProviderWithReloadExtensions.GetConfiguration(_configuration,"petlistadoptionsurl");
                     result = await _httpClient.GetStringAsync($"{petlistadoptionsurl}");

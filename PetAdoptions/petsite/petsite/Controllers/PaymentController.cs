@@ -69,7 +69,7 @@ namespace PetSite.Controllers
             try
             {
                 // Create a new activity for the Payment API call
-                using (var activity = new Activity("Call Payment API").Start())
+                using (var activity = Activity.Current?.Source?.StartActivity("Calling Payment API"))
                 {
                     if (activity != null)
                     {
@@ -81,7 +81,7 @@ namespace PetSite.Controllers
                 }
 
                 // Create a new activity for SQS message
-                using (var activity = new Activity("Post Message to SQS").Start())
+                using (var activity = Activity.Current?.Source?.StartActivity("Post Message to SQS"))
                 {
                     if (activity != null)
                     {
@@ -93,7 +93,7 @@ namespace PetSite.Controllers
                 }
 
                 // Create a new activity for SNS notification
-                using (var activity = new Activity("Send Notification").Start())
+                using (var activity = Activity.Current?.Source?.StartActivity("Send SNS notification"))
                 {
                     if (activity != null)
                     {
@@ -107,7 +107,7 @@ namespace PetSite.Controllers
                 if ("bunny" == pettype) // Only call StepFunction for "bunny" pettype to reduce number of invocations
                 {
                     // Create a new activity for Step Function execution
-                    using (var activity = new Activity("Start Step Function").Start())
+                    using (var activity = Activity.Current?.Source?.StartActivity("Start Step Function"))
                     {
                         if (activity != null)
                         {

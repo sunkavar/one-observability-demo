@@ -41,7 +41,7 @@ public class PetHistoryController : Controller
         try
         {
             // Create a new activity for the API call
-            using (var activity = new Activity("Calling GetPetAdoptionsHistory").Start())
+            using (var activity = Activity.Current?.Source?.StartActivity("Calling GetPetAdoptionsHistory"))
             {
                 ViewData["pethistory"] = await _httpClient.GetStringAsync($"{_pethistoryurl}/api/home/transactions");
             }
@@ -72,7 +72,7 @@ public class PetHistoryController : Controller
         try
         {
             // Create a new activity for the API call
-            using (var activity = new Activity("Calling DeletePetAdoptionsHistory").Start())
+            using (var activity = Activity.Current?.Source?.StartActivity("Calling DeletePetAdoptionsHistory"))
             {
                 ViewData["pethistory"] = await _httpClient.DeleteAsync($"{_pethistoryurl}/api/home/transactions");
             }

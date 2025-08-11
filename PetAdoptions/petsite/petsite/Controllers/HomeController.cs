@@ -124,7 +124,7 @@ namespace PetSite.Controllers
             try
             {
                 // Create a new activity for the API call
-                using (var activity = new Activity("Calling Search API").Start())
+                using (var activity = Activity.Current?.Source?.StartActivity("Calling Search API"))
                 {
                     if (activity != null)
                     {
