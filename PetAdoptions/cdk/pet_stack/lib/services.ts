@@ -244,7 +244,7 @@ export class Services extends Stack {
             //repositoryURI: repositoryURI,
             healthCheck: '/health/status',
             desiredTaskCount: 2,
-            instrumentation: 'otel',
+            instrumentation: 'none',
             region: region,
             securityGroup: ecsServicesSecurityGroup
         })
