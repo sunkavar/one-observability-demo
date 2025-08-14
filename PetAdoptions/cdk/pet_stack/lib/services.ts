@@ -231,7 +231,7 @@ export class Services extends Stack {
             cpu: 1024,
             memoryLimitMiB: 2048,
             healthCheck: '/health/status',
-            instrumentation: 'otel',
+            instrumentation: 'none',
             database: auroraCluster,
             desiredTaskCount: 2,
             region: region,
