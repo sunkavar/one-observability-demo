@@ -37,8 +37,21 @@ namespace PetSite
             services.AddScoped<PetSite.Services.IPetSearchService, PetSite.Services.PetSearchService>();
 
             // Configure AWS Services
+            var awsOptions = Configuration.GetAWSOptions();
+            
+            // Set region from environment if not configured
+            if (awsOptions.Region == null)
+            {
+                var regionFromEnv = Environment.GetEnvironmentVariable("AWS_REGION") ?? 
+                                  Environment.GetEnvironmentVariable("AWS_DEFAULT_REGION");
+                if (!string.IsNullOrEmpty(regionFromEnv))
+                {
+                    awsOptions.Region = Amazon.RegionEndpoint.GetBySystemName(regionFromEnv);
+                }
+            }
+            
             services.AddAWSService<Amazon.SimpleSystemsManagement.IAmazonSimpleSystemsManagement>();
-            services.AddDefaultAWSOptions(Configuration.GetAWSOptions());
+            services.AddDefaultAWSOptions(awsOptions);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -73,4 +86,3 @@ namespace PetSite
         }
     }
 }
-

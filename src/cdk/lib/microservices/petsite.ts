@@ -31,7 +31,7 @@ import { Utilities } from '../utils/utilities';
 import { PARAMETER_STORE_PREFIX } from '../../bin/environment';
 import { Peer, Port, PrefixList } from 'aws-cdk-lib/aws-ec2';
 import { Bucket, ObjectOwnership } from 'aws-cdk-lib/aws-s3';
-import { Duration, RemovalPolicy } from 'aws-cdk-lib';
+import { Duration, RemovalPolicy, Stack } from 'aws-cdk-lib';
 
 export class PetSite extends EKSDeployment {
     public readonly loadBalancer: ApplicationLoadBalancer;
@@ -196,6 +196,8 @@ export class PetSite extends EKSDeployment {
             NAMESPACE: this.namespace,
             SERVICE_ACCOUNT_NAME: this.serviceAccountName,
             TARGET_GROUP_ARN: this.targetGroup.targetGroupArn,
+            AWS_REGION: Stack.of(this).region,
+            SERVICE_ACCOUNT_ROLE_ARN: this.serviceAccountRole?.roleArn || '',
         });
         return yaml.parseAllDocuments(deploymentYaml).map((document) => document.toJS());
     }

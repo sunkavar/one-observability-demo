@@ -52,6 +52,13 @@ spec:
                 - image: '{{ ECR_IMAGE_URL }}'
                   imagePullPolicy: Always
                   name: petsite
+                  env:
+                    - name: ASPNETCORE_ENVIRONMENT
+                      value: "Production"
+                    - name: AWS_REGION
+                      value: "{{ AWS_REGION }}"
+                    - name: AWS_DEFAULT_REGION
+                      value: "{{ AWS_REGION }}"
                   ports:
                       - containerPort: 80
                         protocol: TCP
@@ -67,4 +74,3 @@ spec:
     port: 80
   targetGroupARN: {{ TARGET_GROUP_ARN }}
   targetType: ip
-

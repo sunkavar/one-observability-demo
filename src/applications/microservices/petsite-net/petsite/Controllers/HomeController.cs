@@ -76,6 +76,11 @@ namespace PetSite.Controllers
             if (EnsureUserId()) return new EmptyResult();
             _logger.LogInformation("In Housekeeping, trying to reset the app.");
 
+            //if (!string.IsNullOrEmpty(action) && action.Equals("listconfig", StringComparison.OrdinalIgnoreCase))
+            {
+                PrintConfiguration();
+            }
+
             string cleanupadoptionsurl = _configuration["cleanupadoptionsurl"];
             
             using var httpClient = _httpClientFactory.CreateClient();
@@ -84,6 +89,17 @@ namespace PetSite.Controllers
             await httpClient.PostAsync(url, null);
 
             return View();
+        }
+
+        private void PrintConfiguration()
+        {
+            _logger.LogInformation("----");
+            _logger.LogInformation("Printing configuration settings:");
+            _logger.LogInformation($"Number of config items: {_configuration.AsEnumerable().Count().ToString()}");
+            var configDict = _configuration.AsEnumerable().ToDictionary(x => x.Key, x => x.Value);
+            var json = JsonSerializer.Serialize(configDict, new JsonSerializerOptions { WriteIndented = true });
+            _logger.LogInformation(json);
+            _logger.LogInformation("----");
         }
 
         [HttpGet]

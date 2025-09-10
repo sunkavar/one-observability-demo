@@ -38,10 +38,27 @@ namespace PetSite
                     if (env.EnvironmentName.ToLower() != "development")
                     {
                         Console.WriteLine("[DEBUG] Loading Systems Manager configuration...");
-                        // Build intermediate configuration to get AWS options
-                        var tempConfig = config.Build();
-                        var awsOptions = tempConfig.GetAWSOptions();
-                        Console.WriteLine($"[DEBUG] AWS Region: {awsOptions.Region}");
+                        
+                        // Create AWS options directly from environment
+                        var awsOptions = new AWSOptions();
+                        var regionFromEnv = Environment.GetEnvironmentVariable("AWS_REGION") ?? 
+                                          Environment.GetEnvironmentVariable("AWS_DEFAULT_REGION");
+                                    
+                        Console.WriteLine($"[DEBUG] regionfromEnv is: {regionFromEnv}");
+                        
+                        if (!string.IsNullOrEmpty(regionFromEnv))
+                        {
+                            try
+                            {
+                                awsOptions.Region = Amazon.RegionEndpoint.GetBySystemName(regionFromEnv);
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"[ERROR] Invalid AWS region '{regionFromEnv}': {ex.Message}");
+                            }
+                        }
+                        
+                        Console.WriteLine($"[DEBUG] AWS Region: {awsOptions.Region?.SystemName ?? "NOT SET"}");
 
                         config.AddSystemsManager(configureSource =>
                         {
