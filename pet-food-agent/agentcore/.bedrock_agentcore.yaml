@@ -1,0 +1,30 @@
+default_agent: pet_food_recommendation_agent
+agents:
+  pet_food_recommendation_agent:
+    name: pet_food_recommendation_agent
+    entrypoint: /Users/sunkavar/GitRepos/sunkavar/one-observability-demo/pet-food-agent/bedrock_agent_core_app.py
+    platform: linux/arm64
+    container_runtime: docker
+    aws:
+      execution_role: arn:aws:iam::203918868918:role/AmazonBedrockAgentCoreSDKRuntime-us-east-1-2216b9c8e1
+      execution_role_auto_create: false
+      account: '203918868918'
+      region: us-east-1
+      ecr_repository: 203918868918.dkr.ecr.us-east-1.amazonaws.com/bedrock-agentcore-pet_food_recommendation_agent
+      ecr_auto_create: false
+      network_configuration:
+        network_mode: PUBLIC
+      protocol_configuration:
+        server_protocol: HTTP
+      observability:
+        enabled: true
+    bedrock_agentcore:
+      agent_id: pet_food_recommendation_agent-pp6aKJ2xWF
+      agent_arn: arn:aws:bedrock-agentcore:us-east-1:203918868918:runtime/pet_food_recommendation_agent-pp6aKJ2xWF
+      agent_session_id: 76ca940f-42af-43f6-aedc-4ee037cbe103
+    codebuild:
+      project_name: bedrock-agentcore-pet_food_recommendation_agent-builder
+      execution_role: arn:aws:iam::203918868918:role/AmazonBedrockAgentCoreSDKCodeBuild-us-east-1-2216b9c8e1
+      source_bucket: bedrock-agentcore-codebuild-sources-203918868918-us-east-1
+    authorizer_configuration: null
+    oauth_configuration: null

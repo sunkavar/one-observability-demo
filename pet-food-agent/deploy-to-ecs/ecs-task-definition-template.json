@@ -1,0 +1,82 @@
+{
+  "family": "pet-food-agent",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "EXECUTION_ROLE_ARN",
+  "taskRoleArn": "TASK_ROLE_ARN",
+  "containerDefinitions": [
+    {
+      "name": "pet-food-agent",
+      "image": "ECR_IMAGE_URI",
+      "portMappings": [
+        {
+          "containerPort": 8000,
+          "protocol": "tcp"
+        }
+      ],
+      "essential": true,
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/pet-food-agent",
+          "awslogs-region": "AWS_REGION",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "environment": [
+        {
+          "name": "PORT",
+          "value": "8000"
+        },
+        {
+          "name": "AWS_REGION",
+          "value": "AWS_REGION"
+        },
+        {
+          "name": "AWS_DEFAULT_REGION",
+          "value": "AWS_REGION"
+        },
+        {
+          "name": "OTEL_PYTHON_DISTRO",
+          "value": "aws_distro"
+        },
+        {
+          "name": "OTEL_PYTHON_CONFIGURATOR",
+          "value": "aws_configurator"
+        },
+        {
+          "name": "OTEL_EXPORTER_OTLP_PROTOCOL",
+          "value": "http/protobuf"
+        },
+        {
+          "name": "OTEL_TRACES_EXPORTER",
+          "value": "otlp"
+        },
+        {
+          "name": "OTEL_EXPORTER_OTLP_LOGS_HEADERS",
+          "value": "x-aws-log-group=pet-food-agent-logs,x-aws-log-stream=ecs,x-aws-metric-namespace=pet-food-agent-ecs"
+        },
+        {
+          "name": "OTEL_RESOURCE_ATTRIBUTES",
+          "value": "service.name=pet-food-agent-ecs,aws.log.group.names=pet-food-agent-logs,deployment.environment.name=ECS"
+        },
+        {
+          "name": "AGENT_OBSERVABILITY_ENABLED",
+          "value": "true"
+        }
+      ],
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "curl -f http://localhost:8000/health || exit 1"
+        ],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 60
+      }
+    }
+  ]
+}
