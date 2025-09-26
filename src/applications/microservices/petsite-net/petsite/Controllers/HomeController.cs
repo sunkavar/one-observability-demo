@@ -79,14 +79,16 @@ namespace PetSite.Controllers
             var userId = ViewBag.UserId?.ToString();
 
             _logger.LogInformation($"In Housekeeping, trying to reset the app for user: {userId}");
+            var userId = ViewBag.UserId?.ToString();
             
             try
             {
                 string cleanupadoptionsurl = ParameterNames.GetParameterValue(ParameterNames.CLEANUP_ADOPTIONS_URL, _configuration);
 
                 using var httpClient = _httpClientFactory.CreateClient();
-                var url = UrlHelper.BuildUrl(cleanupadoptionsurl, new String[]{userId}, null);
-                var response = await httpClient.DeleteAsync(url);
+                var userId = ViewBag.UserId?.ToString();
+                var url = UrlHelper.BuildUrl(cleanupadoptionsurl, null, ("userId", userId));
+                var response = await httpClient.PostAsync(url, null);
                 
                 if (!response.IsSuccessStatusCode)
                 {
