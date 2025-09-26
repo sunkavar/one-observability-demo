@@ -75,16 +75,18 @@ namespace PetSite.Controllers
         public async Task<IActionResult> HouseKeeping()
         {
             if (EnsureUserId()) return new EmptyResult();
-            _logger.LogInformation("In Housekeeping, trying to reset the app.");
+            
             var userId = ViewBag.UserId?.ToString();
 
+            _logger.LogInformation($"In Housekeeping, trying to reset the app for user: {userId}");
+            
             try
             {
                 string cleanupadoptionsurl = ParameterNames.GetParameterValue(ParameterNames.CLEANUP_ADOPTIONS_URL, _configuration);
 
                 using var httpClient = _httpClientFactory.CreateClient();
-                var url = UrlHelper.BuildUrl(cleanupadoptionsurl, new string[]{"userId", userId}, null);
-                var response = await httpClient.PostAsync(url, null);
+                var url = UrlHelper.BuildUrl(cleanupadoptionsurl, new String[]{"userId", userId}, null);
+                var response = await httpClient.DeleteAsync(url);
                 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -97,6 +99,8 @@ namespace PetSite.Controllers
                 _logger.LogError(e, $"Error calling Housekeeping API: {e.Message} - for user: {userId}");
                 ViewBag.ErrorMessage = $"Unable to perform housekeeping at this time. Please try again later.\nError message: {e.Message}";
             }
+
+            _logger.LogInformation($"Housekeeping complete for user: {userId}");
 
             return View();
         }
