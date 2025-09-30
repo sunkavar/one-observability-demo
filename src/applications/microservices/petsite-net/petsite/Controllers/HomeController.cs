@@ -85,7 +85,7 @@ namespace PetSite.Controllers
                 string cleanupadoptionsurl = ParameterNames.GetParameterValue(ParameterNames.CLEANUP_ADOPTIONS_URL, _configuration);
 
                 using var httpClient = _httpClientFactory.CreateClient();
-                var url = UrlHelper.BuildUrl(cleanupadoptionsurl, new String[]{"userId", userId}, null);
+                var url = UrlHelper.BuildUrl(cleanupadoptionsurl, new String[]{userId}, null);
                 var response = await httpClient.DeleteAsync(url);
                 
                 if (!response.IsSuccessStatusCode)
