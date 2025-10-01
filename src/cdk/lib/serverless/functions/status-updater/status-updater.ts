@@ -7,6 +7,7 @@ import {
     WokshopLambdaFunction,
     WorkshopLambdaFunctionProperties,
     getLambdaInsightsLayerArn,
+    getOpenTelemetryPythonLayerArn,
 } from '../../../constructs/lambda';
 import { Construct } from 'constructs';
 import { ManagedPolicy, PolicyDocument, Effect, PolicyStatement, StarPrincipal } from 'aws-cdk-lib/aws-iam';
