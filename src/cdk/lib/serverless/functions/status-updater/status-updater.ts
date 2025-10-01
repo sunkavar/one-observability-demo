@@ -173,6 +173,11 @@ export class StatusUpdatedService extends WokshopLambdaFunction {
                 'LambdaInsightsLayer',
                 getLambdaInsightsLayerArn(Stack.of(this).region),
             ),
+            LayerVersion.fromLayerVersionArn(
+                this,
+                'OpenTelemetryLayer',
+                getOpenTelemetryPythonLayerArn(Stack.of(this).region),
+            ),
         ];
     }
     getBundling(): BundlingOptions {
