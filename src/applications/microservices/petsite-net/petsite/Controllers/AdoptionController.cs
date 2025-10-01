@@ -42,11 +42,11 @@ namespace PetSite.Controllers
                 try
                 {
                     _logger.LogInformation($"Fetching pet details for petid: {petid}, user: {userId}");
-                    
+
                     // Call the service to get pet details by petid
                     var pets = await _petSearchService.GetPetDetails("", "", petid, userId);
                     pet = pets.FirstOrDefault();
-                    
+
                     if (pet != null)
                     {
                         _logger.LogInformation($"Retrieved pet details for petid {petid}: {JsonSerializer.Serialize(pet)}");
