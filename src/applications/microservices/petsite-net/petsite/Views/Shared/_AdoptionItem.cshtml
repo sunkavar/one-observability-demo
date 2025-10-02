@@ -22,30 +22,30 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const adoptionInfoElements = document.querySelectorAll('.adoption-info');
-    
+
     adoptionInfoElements.forEach(function(element) {
         const adoptionDateStr = element.getAttribute('data-adoption-date');
-        
+
         if (adoptionDateStr) {
             try {
                 // Parse the ISO date string
                 const adoptionDate = new Date(adoptionDateStr);
-                
+
                 // Format date in browser's timezone
-                const dateOptions = { 
-                    year: 'numeric', 
-                    month: 'short', 
+                const dateOptions = {
+                    year: 'numeric',
+                    month: 'short',
                     day: '2-digit'
                 };
-                const timeOptions = { 
-                    hour: 'numeric', 
-                    minute: '2-digit', 
-                    hour12: true 
+                const timeOptions = {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
                 };
-                
+
                 const formattedDate = adoptionDate.toLocaleDateString('en-US', dateOptions);
                 const formattedTime = adoptionDate.toLocaleTimeString('en-US', timeOptions);
-                
+
                 // Update the display
                 element.querySelector('.adoption-date').textContent = formattedDate;
                 element.querySelector('.adoption-time').textContent = formattedTime;

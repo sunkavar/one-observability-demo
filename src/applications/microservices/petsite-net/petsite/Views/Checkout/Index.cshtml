@@ -165,7 +165,7 @@ $(document).ready(function() {
             success: function(cartData) {
                 // Refresh cart display
                 refreshCartDisplay(cartData);
-                
+
                 // Update cart count in header
                 if (cartData.total_items > 0) {
                     $('#cart-count').text(cartData.total_items).show();
