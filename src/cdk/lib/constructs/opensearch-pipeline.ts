@@ -100,8 +100,13 @@ export class OpenSearchPipeline extends Construct {
             throw new Error('OpenSearch collection is required for the pipeline');
         }
 
-        // Set default values
-        const pipelineName = properties.pipelineName || 'pet-logs-pipeline';
+        // Set default values - use construct ID to ensure uniqueness
+        // OpenSearch pipeline names have a 28-character limit
+        const stackName = Stack.of(this).stackName.toLowerCase();
+        const shortId = id.toLowerCase().substring(0, 10); // Truncate ID to 10 chars
+        const shortStack = stackName.substring(0, 10); // Truncate stack name to 10 chars
+        const timestamp = Date.now().toString().slice(-6); // Last 6 digits of timestamp for uniqueness
+        const pipelineName = properties.pipelineName || `${shortId}-${shortStack}-${timestamp}`.substring(0, 28);
         const bufferOptions = {
             flushInterval: properties.bufferOptions?.flushInterval || 60,
             batchSize: properties.bufferOptions?.batchSize || 1000,
@@ -140,13 +145,18 @@ export class OpenSearchPipeline extends Construct {
             }),
         );
 
+        // Create CloudWatch log group for pipeline logs
+        // OpenSearch Ingestion requires log groups to use /aws/vendedlogs/ prefix
+        // Use dynamic pipeline name to avoid conflicts
+        const logGroupName = `/aws/vendedlogs/opensearch-ingestion/${pipelineName}`;
+
         // Add CloudWatch logging permissions
         this.pipelineRole.addToPolicy(
             new PolicyStatement({
                 effect: Effect.ALLOW,
                 actions: ['logs:CreateLogStream', 'logs:PutLogEvents', 'logs:CreateLogGroup'],
                 resources: [
-                    `arn:aws:logs:${Stack.of(this).region}:${Stack.of(this).account}:log-group:/aws/vendedlogs/opensearch-ingestion/${pipelineName}*`,
+                    `arn:aws:logs:${Stack.of(this).region}:${Stack.of(this).account}:log-group:${logGroupName}*`,
                 ],
             }),
         );
@@ -162,11 +172,8 @@ export class OpenSearchPipeline extends Construct {
                 ],
             }),
         );
-
-        // Create CloudWatch log group for pipeline logs
-        // OpenSearch Ingestion requires log groups to use /aws/vendedlogs/ prefix
         const logGroup = new LogGroup(this, 'PipelineLogGroup', {
-            logGroupName: `/aws/vendedlogs/opensearch-ingestion/${pipelineName}`,
+            logGroupName: logGroupName,
             retention: RetentionDays.ONE_WEEK,
             removalPolicy: RemovalPolicy.DESTROY,
         });
@@ -189,7 +196,7 @@ export class OpenSearchPipeline extends Construct {
             logPublishingOptions: {
                 isLoggingEnabled: true,
                 cloudWatchLogDestination: {
-                    logGroup: `/aws/vendedlogs/opensearch-ingestion/${pipelineName}`,
+                    logGroup: logGroupName,
                 },
             },
             // Add tags for resource management

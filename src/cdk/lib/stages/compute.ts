@@ -75,7 +75,7 @@ export class ComputeStack extends Stack {
 
         // Create OpenSearch ingestion pipeline
         this.openSearchPipeline = new OpenSearchPipeline(this, 'LogsIngestionPipeline', {
-            pipelineName: 'petsite-logs-pipeline',
+            // Let CDK generate a unique pipeline name to avoid conflicts
             openSearchCollection: openSearchCollection,
             indexTemplate: 'pet-collection-logs',
         });
