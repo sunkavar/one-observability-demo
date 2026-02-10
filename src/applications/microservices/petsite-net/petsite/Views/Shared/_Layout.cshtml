@@ -1,27 +1,12 @@
 @using Microsoft.AspNetCore.Html
 @using Amazon.SimpleSystemsManagement
 @using Amazon.SimpleSystemsManagement.Model
-@using PetSite.Configuration
-@inject IAmazonSimpleSystemsManagement SSMClient
-@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
-@inject ParameterRefreshManager RefreshManager
 
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
-    @try
-    {
-        var rumScript = await ParameterNames.GetParameterValueAsync(ParameterNames.RUM_SCRIPT_PARAMETER, RefreshManager);
-        if (!string.IsNullOrWhiteSpace(rumScript))
-        {
-            @Html.Raw(rumScript)
-        }
-    }
-    catch
-    {
-        <!-- RUM script not available -->
-    }
+    @(new HtmlString(new AmazonSimpleSystemsManagementClient().GetParameterAsync(new GetParameterRequest() { Name = "/petstore/rumscriptparameter" }).Result.Parameter.Value))
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Observability PetAdoptions</title>
