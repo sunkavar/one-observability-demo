@@ -4,6 +4,7 @@
 @using PetSite.Configuration
 @inject IAmazonSimpleSystemsManagement SSMClient
 @inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@inject ParameterRefreshManager RefreshManager
 
 <!DOCTYPE html>
 <html lang="en">
@@ -11,8 +12,8 @@
 <head>
     @try
     {
-        var rumScript = ParameterNames.GetParameterValue(ParameterNames.RUM_SCRIPT_PARAMETER, Configuration);
-        if (!string.IsNullOrEmpty(rumScript))
+        var rumScript = await ParameterNames.GetParameterValueAsync(ParameterNames.RUM_SCRIPT_PARAMETER, RefreshManager);
+        if (!string.IsNullOrWhiteSpace(rumScript))
         {
             @Html.Raw(rumScript)
         }
