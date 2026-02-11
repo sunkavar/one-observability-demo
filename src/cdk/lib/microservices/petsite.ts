@@ -256,7 +256,7 @@ export class PetSite extends EKSDeployment {
 
         // Remember to add the parameter to the manifest too or the change won't be applied
         const deploymentYaml = nunjucks.renderString(manifestTemplate, {
-            ECR_IMAGE_URL: properties.repositoryURI,
+            ECR_IMAGE_URL: `${properties.repositoryURI}:latest`,
             NAMESPACE: this.namespace,
             SERVICE_ACCOUNT_NAME: this.serviceAccountName,
             TARGET_GROUP_ARN: this.targetGroup.targetGroupArn,

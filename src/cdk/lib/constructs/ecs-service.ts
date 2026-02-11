@@ -196,7 +196,7 @@ export abstract class EcsService extends Microservice {
             }),
         );
 
-        const image = ContainerImage.fromRegistry(properties.repositoryURI);
+        const image = ContainerImage.fromRegistry(`${properties.repositoryURI}:latest`);
 
         // Merge default environment variables with additional ones
         const defaultEnvironment = {
