@@ -1,25 +1,26 @@
 @using Microsoft.AspNetCore.Html
 @using Amazon.SimpleSystemsManagement
 @using Amazon.SimpleSystemsManagement.Model
-@{
-    string rumScript = "";
-    try
-    {
-        rumScript = new AmazonSimpleSystemsManagementClient().GetParameterAsync(new GetParameterRequest() { Name = "/petstore/rumscriptparameter" }).Result.Parameter.Value;
-    }
-    catch
-    {
-        // RUM script not available
-    }
-}
+@using PetSite.Configuration
+@inject IAmazonSimpleSystemsManagement SSMClient
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
-    @if (!string.IsNullOrWhiteSpace(rumScript))
+    @try
     {
-        @Html.Raw(rumScript)
+        var rumScriptParameterName = ParameterNames.GetParameterValue(ParameterNames.RUM_SCRIPT_PARAMETER, Configuration);
+        var rumScript = SSMClient.GetParameterAsync(new GetParameterRequest() { Name = rumScriptParameterName }).Result.Parameter.Value;
+        if (!string.IsNullOrWhiteSpace(rumScript))
+        {
+            @Html.Raw(rumScript)
+        }
+    }
+    catch
+    {
+        <!-- RUM script not available -->
     }
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
