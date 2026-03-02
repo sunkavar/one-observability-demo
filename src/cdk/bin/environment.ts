@@ -89,6 +89,8 @@ export const TAGS = {
     environment: 'non-prod',
     application: 'One Observability Workshop',
     stackName: process.env.STACK_NAME || 'MissingStackName',
+    'auto-delete': 'no',
+    'auto-stop': 'no',
 };
 
 /** Default retention period for logs */
