@@ -1,0 +1,82 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>CHANGELOG | One Observability Workshop - v3.0.0</title><meta name="description" content="Documentation for One Observability Workshop"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script><script async src="../assets/hierarchy.js" id="tsd-hierarchy-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar"><div class="tsd-toolbar-contents container"><a href="../index.html" class="title">One Observability Workshop - v3.0.0</a><div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/><ul role="listbox" id="tsd-search-results"></ul><div id="tsd-search-status" aria-live="polite" aria-atomic="true"><div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-menu"></use></svg></a></div></header><div class="container container-main"><div class="col-content"><div class="tsd-page-title"><ul class="tsd-breadcrumb" aria-label="Breadcrumb"><li><a href="" aria-current="page">CHANGELOG</a></li></ul></div><div class="tsd-panel tsd-typography"><!--
+Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+SPDX-License-Identifier: Apache-2.0
+-->
+<h1 id="changelog" class="tsd-anchor-link">Changelog<a href="#changelog" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h1>
+<p>All notable changes to the One Observability Demo will be documented in this file.</p>
+<p>The format is based on <a href="https://keepachangelog.com/en/1.1.0/">Keep a Changelog</a>,
+and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
+<blockquote>
+<p><strong>Note</strong>: Releases prior to 3.0.0 were not tracked with a formal changelog or
+semantic versioning. The version history below begins with the adoption of
+structured release management.</p>
+</blockquote>
+<h2 id="unreleased" class="tsd-anchor-link">[Unreleased]<a href="#unreleased" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="changed" class="tsd-anchor-link">Changed<a href="#changed" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li><strong>Security scanning</strong>: Enabled <code>fail-on-findings</code> on GitHub Actions ASH workflow and pre-commit ASH hook so builds and commits fail when actionable vulnerabilities are detected</li>
+<li><strong>Security scanning</strong>: Switched to official ASH reusable workflow from <code>awslabs/automated-security-helper</code> with Grype and Syft enabled</li>
+<li><strong>Security scanning</strong>: Disabled cfn-nag scanner (redundant with Checkov/cdk-nag), added <code>wiki-docs</code> to ASH ignore paths</li>
+<li><strong>Security scanning</strong>: Aligned ASH version to <code>v3</code> across workflow and pre-commit</li>
+<li><strong>Pre-commit hooks</strong>: Upgraded all hook revisions to latest versions via <code>pre-commit autoupdate</code></li>
+</ul>
+<h2 id="300-2026-03-07" class="tsd-anchor-link">[3.0.0] - 2026-03-07<a href="#300-2026-03-07" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="added" class="tsd-anchor-link">Added<a href="#added" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li><strong>Pet Food microservice</strong> (<code>petfood-rs</code>): Rust/Axum service on ECS Fargate with OpenTelemetry Rust SDK, DynamoDB persistence, EventBridge event emission, and custom Prometheus metrics</li>
+<li><strong>Pet Food Agent</strong> (<code>petfoodagent-strands-py</code>): Python AI agent deployed on Amazon Bedrock AgentCore (ARM64), using Strands Agents SDK for natural-language food recommendations</li>
+<li><strong>Pet Food serverless functions</strong>: Stock processor, image generator (Bedrock Titan), and cleanup processor — all triggered via EventBridge</li>
+<li><strong>Application Signals integration</strong>: <code>ApplicationSignalsIntegration</code> L2 construct on petsearch-java with SLO definitions</li>
+<li><strong>OpenSearch Serverless</strong>: Collection and ingestion pipeline for centralized log analytics</li>
+<li><strong>VPC Endpoints construct</strong>: Interface and gateway endpoints for private AWS service connectivity (SSM, ECR, CloudWatch, X-Ray, STS, EventBridge, S3, DynamoDB)</li>
+<li><strong>CodeConnection support</strong>: Pipeline source can use AWS CodeConnection (GitHub) in addition to S3 bucket</li>
+<li><strong>Parameter Store configuration</strong>: Centralized config management via SSM Parameter Store with <code>retrieve-config.sh</code></li>
+<li><strong>CDK cleanup automation</strong>: Step Functions state machine with async polling for reliable cleanup of CDK stacks, S3 buckets, and bootstrap resources</li>
+<li><strong>Cleanup script</strong> (<code>cleanup-resources.ts</code>): Tag-based discovery and deletion of orphaned workshop resources (log groups, EBS volumes, snapshots, RDS backups, ECS task definitions, S3 buckets)</li>
+<li><strong>DynamoDB seeding script</strong>: Interactive and non-interactive modes for seeding pet adoption and pet food tables</li>
+<li><strong>Image generation script</strong>: Bedrock Titan Image Generator v2 for pet and food images with retry logic and validation</li>
+<li><strong>Application redeployment script</strong>: Cross-platform container builds with auto-detection of Docker/Finch/Podman</li>
+<li><strong>ECS port forwarding script</strong>: Session Manager-based port forwarding to ECS tasks</li>
+<li><strong>Workshop NAG pack</strong>: Custom CDK Nag rule pack with workshop-specific suppressions</li>
+<li><strong>Canaries</strong>: CloudWatch Synthetics canaries for traffic generation and housekeeping</li>
+<li><strong>GitHub Actions</strong>: Documentation workflow (TypeDoc → GitHub Pages), security scanning (ASH), acceptance tests, pre-commit checks</li>
+<li><strong>Documentation</strong>: Comprehensive TypeDoc API documentation with <code>@packageDocumentation</code> on all 44 source files and JSDoc on all high-impact classes/interfaces</li>
+<li><strong>README documentation table</strong>: Guides section in README linking to all docs for non-technical audiences</li>
+</ul>
+<h3 id="changed-1" class="tsd-anchor-link">Changed<a href="#changed-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li><strong>Pipeline architecture</strong>: 5 deployment stages across 2 waves plus standalone Microservices stage (Core Wave → Backend Wave → Microservices)</li>
+<li><strong>Pet List Adoptions</strong>: Migrated from Go to Python/FastAPI (<code>petlistadoption-py</code>) with ADOT auto-instrumentation and Prometheus metrics</li>
+<li><strong>Pet Site</strong>: Renamed to <code>petsite-net</code>, deployed on EKS with CloudFront distribution, regional/global WAF, and Application Signals</li>
+<li><strong>Observability stack</strong>: Per-service instrumentation strategy — OTel Go SDK (payforadoption), ADOT auto-instrumentation (petlistadoption), Application Signals (petsearch), CloudWatch agent (petsite), OTel Rust SDK (petfood)</li>
+<li><strong>FireLens log routing</strong>: Fluent Bit sidecar on all ECS tasks for structured log delivery to CloudWatch Logs</li>
+<li><strong>Container Insights</strong>: Enabled on both ECS and EKS clusters</li>
+<li><strong>Architecture documentation</strong>: Rewritten with accurate microservice count (6), correct languages, correct stage structure, and regenerated diagrams</li>
+<li><strong>GitHub Pages documentation</strong>: HTML site with TypeDoc default theme, PR preview deployments to live URLs, and all guides included as project documents</li>
+</ul>
+<h3 id="fixed" class="tsd-anchor-link">Fixed<a href="#fixed" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>Documentation accuracy: Fixed microservice count (6 not 5), languages (Python not Go for petlistadoptions), pipeline stage structure, and diagram references</li>
+<li>Removed broken image references from <code>codebuild-cdk-deployment-template.md</code></li>
+<li>Cleaned up 8 stale diagram files from <code>generated-diagrams/</code></li>
+</ul>
+<h2 id="200-2025-01-01" class="tsd-anchor-link">[2.0.0] - 2025-01-01<a href="#200-2025-01-01" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<blockquote>
+<p>Releases before 3.0.0 were not formally tracked. The entries below are
+reconstructed from commit history and may be incomplete.</p>
+</blockquote>
+<h3 id="added-1" class="tsd-anchor-link">Added<a href="#added-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>CDK Pipeline with CodePipeline V2</li>
+<li>ECS and EKS container orchestration</li>
+<li>Pay for Adoption (Go), Pet Search (Java), Pet Site (.NET) microservices</li>
+<li>Aurora PostgreSQL and DynamoDB data stores</li>
+<li>CloudFormation CodeBuild deployment template with retry handling</li>
+<li>X-Ray distributed tracing and CloudWatch metrics</li>
+</ul>
+<h2 id="100-2024-12-01" class="tsd-anchor-link">[1.0.0] - 2024-12-01<a href="#100-2024-12-01" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="added-2" class="tsd-anchor-link">Added<a href="#added-2" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>Initial release of One Observability Demo workshop infrastructure</li>
+</ul>
+</div></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#changelog"><span>Changelog</span></a><ul><li><a href="#unreleased"><span>[<wbr/>Unreleased]</span></a></li><li><ul><li><a href="#changed"><span>Changed</span></a></li></ul></li><li><a href="#300-2026-03-07"><span>[3.0.0] -<wbr/> 2026-<wbr/>03-<wbr/>07</span></a></li><li><ul><li><a href="#added"><span>Added</span></a></li><li><a href="#changed-1"><span>Changed</span></a></li><li><a href="#fixed"><span>Fixed</span></a></li></ul></li><li><a href="#200-2025-01-01"><span>[2.0.0] -<wbr/> 2025-<wbr/>01-<wbr/>01</span></a></li><li><ul><li><a href="#added-1"><span>Added</span></a></li></ul></li><li><a href="#100-2024-12-01"><span>[1.0.0] -<wbr/> 2024-<wbr/>12-<wbr/>01</span></a></li><li><ul><li><a href="#added-2"><span>Added</span></a></li></ul></li></ul></div></details></div><div class="site-menu"><nav class="tsd-navigation"><a href="../modules.html">One Observability Workshop - v3.0.0</a><ul class="tsd-small-nested-navigation" id="tsd-nav-container"><li>Loading...</li></ul></nav></div></div></div><footer></footer><div class="overlay"></div></body></html>

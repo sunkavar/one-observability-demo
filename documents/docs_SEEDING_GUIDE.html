@@ -1,0 +1,161 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>docs/SEEDING_GUIDE | One Observability Workshop - v3.0.0</title><meta name="description" content="Documentation for One Observability Workshop"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script><script async src="../assets/hierarchy.js" id="tsd-hierarchy-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar"><div class="tsd-toolbar-contents container"><a href="../index.html" class="title">One Observability Workshop - v3.0.0</a><div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/><ul role="listbox" id="tsd-search-results"></ul><div id="tsd-search-status" aria-live="polite" aria-atomic="true"><div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-menu"></use></svg></a></div></header><div class="container container-main"><div class="col-content"><div class="tsd-page-title"><ul class="tsd-breadcrumb" aria-label="Breadcrumb"><li><a href="" aria-current="page">docs/SEEDING_GUIDE</a></li></ul></div><div class="tsd-panel tsd-typography"><h1 id="dynamodb-seeding-guide" class="tsd-anchor-link">DynamoDB Seeding Guide<a href="#dynamodb-seeding-guide" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h1>
+<h2 id="overview" class="tsd-anchor-link">Overview<a href="#overview" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>The <code>seed-dynamodb.sh</code> script provides a comprehensive solution for seeding both pet adoption and petfood DynamoDB tables with sample data. It supports both interactive and non-interactive modes for flexible usage.</p>
+<h2 id="files" class="tsd-anchor-link">Files<a href="#files" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ul>
+<li><strong><code>seed-dynamodb.sh</code></strong> - Main seeding script (10KB)</li>
+<li><strong><code>seed.json</code></strong> - Pet adoption sample data (4.3KB)</li>
+<li><strong><code>petfood-seed.json</code></strong> - Petfood sample data (7KB)</li>
+</ul>
+<h2 id="petfood-sample-data" class="tsd-anchor-link">Petfood Sample Data<a href="#petfood-sample-data" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>The <code>petfood-seed.json</code> contains 10 diverse food items with:</p>
+<ul>
+<li><strong>Pet Types</strong>: Dogs, Cats</li>
+<li><strong>Food Types</strong>: Dry food, Wet food, Treats</li>
+<li><strong>Brands</strong>: PetNutrition Pro, PetDelicious, TreatTime, NaturalPet</li>
+<li><strong>Data Structure</strong>:
+<ul>
+<li>Basic info (id, name, brand, price, description, image_url)</li>
+<li>Pet/food type classification</li>
+<li>Availability status</li>
+<li>Ingredients array</li>
+<li>Nutritional information object</li>
+<li>Timestamps</li>
+</ul>
+</li>
+</ul>
+<h2 id="usage-examples" class="tsd-anchor-link">Usage Examples<a href="#usage-examples" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="interactive-mode" class="tsd-anchor-link">Interactive Mode<a href="#interactive-mode" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="bash"><span class="hl-5"># Run without arguments to enter interactive mode</span><br/><span class="hl-0">./src/cdk/scripts/seed-dynamodb.sh</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Interactive mode provides a menu with options:</p>
+<ol>
+<li>Seed both pet adoption and petfood tables</li>
+<li>Seed pet adoption table only</li>
+<li>Seed petfood table only</li>
+<li>Select specific table manually</li>
+</ol>
+<h3 id="non-interactive-mode" class="tsd-anchor-link">Non-Interactive Mode<a href="#non-interactive-mode" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<h4 id="seed-all-tables" class="tsd-anchor-link">Seed All Tables<a href="#seed-all-tables" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<pre><code class="bash"><span class="hl-5"># Seed both pet adoption and petfood tables</span><br/><span class="hl-0">./src/cdk/scripts/seed-dynamodb.sh</span><span class="hl-1"> </span><span class="hl-2">all</span>
+</code><button type="button">Copy</button></pre>
+
+<h4 id="seed-by-type" class="tsd-anchor-link">Seed by Type<a href="#seed-by-type" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<pre><code class="bash"><span class="hl-5"># Seed all pet adoption tables (pattern: *Petadoption*)</span><br/><span class="hl-0">./src/cdk/scripts/seed-dynamodb.sh</span><span class="hl-1"> </span><span class="hl-2">pets</span><br/><br/><span class="hl-5"># Seed all petfood tables (pattern: *petfood*)</span><br/><span class="hl-0">./src/cdk/scripts/seed-dynamodb.sh</span><span class="hl-1"> </span><span class="hl-2">petfood</span>
+</code><button type="button">Copy</button></pre>
+
+<h4 id="seed-specific-tables" class="tsd-anchor-link">Seed Specific Tables<a href="#seed-specific-tables" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<pre><code class="bash"><span class="hl-5"># Seed specific pet adoption table</span><br/><span class="hl-0">./src/cdk/scripts/seed-dynamodb.sh</span><span class="hl-1"> </span><span class="hl-2">pets</span><span class="hl-1"> </span><span class="hl-2">MyPetAdoptionTable</span><br/><br/><span class="hl-5"># Seed specific petfood table</span><br/><span class="hl-0">./src/cdk/scripts/seed-dynamodb.sh</span><span class="hl-1"> </span><span class="hl-2">petfood</span><span class="hl-1"> </span><span class="hl-2">MyPetfoodTable</span><br/><br/><span class="hl-5"># Auto-detect table type by name</span><br/><span class="hl-0">./src/cdk/scripts/seed-dynamodb.sh</span><span class="hl-1"> </span><span class="hl-2">MySpecificTableName</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="features" class="tsd-anchor-link">Features<a href="#features" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="automatic-table-discovery" class="tsd-anchor-link">Automatic Table Discovery<a href="#automatic-table-discovery" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>Scans DynamoDB for available tables</li>
+<li>Pattern-based matching for table types:
+<ul>
+<li>Pet adoption: <code>*Petadoption*</code></li>
+<li>Petfood: <code>*petfood*</code></li>
+</ul>
+</li>
+</ul>
+<h3 id="data-type-conversion" class="tsd-anchor-link">Data Type Conversion<a href="#data-type-conversion" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>The script automatically converts JSON data to DynamoDB format:</p>
+<h4 id="pet-data" class="tsd-anchor-link">Pet Data<a href="#pet-data" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<ul>
+<li>All values converted to strings (<code>{S: value}</code>)</li>
+<li>Handles null/empty value filtering</li>
+</ul>
+<h4 id="petfood-data" class="tsd-anchor-link">Petfood Data<a href="#petfood-data" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<ul>
+<li>Strings: <code>{S: value}</code></li>
+<li>Arrays (ingredients): <code>{SS: [values]}</code></li>
+<li>Objects (nutritional_info): <code>{M: {key: {S: value}}}</code></li>
+</ul>
+<h3 id="error-handling" class="tsd-anchor-link">Error Handling<a href="#error-handling" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>Validates AWS credentials</li>
+<li>Checks for required seed files</li>
+<li>Provides clear error messages</li>
+<li>Handles missing tables gracefully</li>
+</ul>
+<h3 id="validation-checks" class="tsd-anchor-link">Validation Checks<a href="#validation-checks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>Confirms AWS CLI is configured</li>
+<li>Verifies seed files exist</li>
+<li>Validates table availability</li>
+<li>Reports seeding progress</li>
+</ul>
+<h2 id="data-structure-examples" class="tsd-anchor-link">Data Structure Examples<a href="#data-structure-examples" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="pet-adoption-data-seedjson" class="tsd-anchor-link">Pet Adoption Data (seed.json)<a href="#pet-adoption-data-seedjson" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="json"><span class="hl-1">{</span><br/><span class="hl-1">  </span><span class="hl-13">&quot;petid&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;P001&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-13">&quot;petname&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;Buddy&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-13">&quot;petage&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;2&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-13">&quot;pettype&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;dog&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-13">&quot;breed&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;Golden Retriever&quot;</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="petfood-data-petfood-seedjson" class="tsd-anchor-link">Petfood Data (petfood-seed.json)<a href="#petfood-data-petfood-seedjson" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="json"><span class="hl-1">{</span><br/><span class="hl-1">  </span><span class="hl-13">&quot;id&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;F001&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-13">&quot;name&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;Premium Dog Food - Adult&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-13">&quot;brand&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;PetNutrition Pro&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-13">&quot;price&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;24.99&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-13">&quot;pet_type&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;dog&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-13">&quot;food_type&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;dry&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-13">&quot;ingredients&quot;</span><span class="hl-1">: [</span><span class="hl-2">&quot;Chicken&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;Rice&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;Vegetables&quot;</span><span class="hl-1">],</span><br/><span class="hl-1">  </span><span class="hl-13">&quot;nutritional_info&quot;</span><span class="hl-1">: {</span><br/><span class="hl-1">    </span><span class="hl-13">&quot;Protein&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;28%&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-13">&quot;Fat&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;15%&quot;</span><br/><span class="hl-1">  }</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="prerequisites" class="tsd-anchor-link">Prerequisites<a href="#prerequisites" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ol>
+<li><strong>AWS CLI</strong>: Configured with valid credentials</li>
+<li><strong>Permissions</strong>: DynamoDB table read/write access</li>
+<li><strong>Dependencies</strong>: <code>jq</code> for JSON processing</li>
+<li><strong>Executability</strong>: Script must be executable (<code>chmod +x</code>)</li>
+</ol>
+<h2 id="troubleshooting" class="tsd-anchor-link">Troubleshooting<a href="#troubleshooting" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="common-issues" class="tsd-anchor-link">Common Issues<a href="#common-issues" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ol>
+<li>
+<p><strong>AWS Credentials Not Found</strong></p>
+<pre><code><span class="hl-12">Error</span><span class="hl-1">: </span><span class="hl-6">Valid</span><span class="hl-1"> </span><span class="hl-7">AWS</span><span class="hl-1"> </span><span class="hl-6">credentials</span><span class="hl-1"> </span><span class="hl-6">not</span><span class="hl-1"> </span><span class="hl-6">found</span><span class="hl-1">. </span><span class="hl-6">Please</span><span class="hl-1"> </span><span class="hl-6">configure</span><span class="hl-1"> </span><span class="hl-7">AWS</span><span class="hl-1"> </span><span class="hl-7">CLI</span><span class="hl-1">.</span>
+</code><button>Copy</button></pre>
+
+<p>Solution: Run <code>aws configure</code> or set environment variables</p>
+</li>
+<li>
+<p><strong>Seed Files Missing</strong></p>
+<pre><code><span class="hl-12">Error</span><span class="hl-1">: </span><span class="hl-6">Seed</span><span class="hl-1"> </span><span class="hl-6">files</span><span class="hl-1"> </span><span class="hl-6">not</span><span class="hl-1"> </span><span class="hl-12">found</span><span class="hl-1">: ./</span><span class="hl-6">seed</span><span class="hl-1">.</span><span class="hl-6">json</span>
+</code><button>Copy</button></pre>
+
+<p>Solution: Ensure both <code>seed.json</code> and <code>petfood-seed.json</code> exist in script directory</p>
+</li>
+<li>
+<p><strong>No Tables Found</strong></p>
+<pre><code><span class="hl-6">No</span><span class="hl-1"> </span><span class="hl-6">DynamoDB</span><span class="hl-1"> </span><span class="hl-6">tables</span><span class="hl-1"> </span><span class="hl-6">found</span><span class="hl-1"> </span><span class="hl-4">in</span><span class="hl-1"> </span><span class="hl-6">the</span><span class="hl-1"> </span><span class="hl-6">current</span><span class="hl-1"> </span><span class="hl-6">region</span><span class="hl-1">.</span>
+</code><button>Copy</button></pre>
+
+<p>Solution: Verify region and deploy DynamoDB stacks first</p>
+</li>
+<li>
+<p><strong>Table Pattern Not Found</strong></p>
+<pre><code><span class="hl-6">No</span><span class="hl-1"> </span><span class="hl-6">petfood</span><span class="hl-1"> </span><span class="hl-6">tables</span><span class="hl-1"> </span><span class="hl-0">found</span><span class="hl-1"> (</span><span class="hl-6">pattern</span><span class="hl-1">: *</span><span class="hl-6">petfood</span><span class="hl-1">*)</span>
+</code><button>Copy</button></pre>
+
+<p>Solution: Check table naming conventions match expected patterns</p>
+</li>
+</ol>
+<h3 id="debug-information" class="tsd-anchor-link">Debug Information<a href="#debug-information" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>The script provides verbose output including:</p>
+<ul>
+<li>Table discovery results</li>
+<li>Item insertion progress</li>
+<li>Final count of seeded items</li>
+<li>Error details with context</li>
+</ul>
+<h2 id="integration-with-cdk" class="tsd-anchor-link">Integration with CDK<a href="#integration-with-cdk" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>This seeding script is designed to work with the One Observability Demo CDK infrastructure:</p>
+<ol>
+<li>Deploy CDK stacks to create DynamoDB tables</li>
+<li>Run seeding script to populate with sample data</li>
+<li>Tables are ready for application testing</li>
+</ol>
+<h2 id="benefits" class="tsd-anchor-link">Benefits<a href="#benefits" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ul>
+<li><strong>Comprehensive</strong>: Seeds both pet adoption and petfood data</li>
+<li><strong>Flexible</strong>: Interactive and non-interactive modes</li>
+<li><strong>Robust</strong>: Error handling and validation</li>
+<li><strong>Efficient</strong>: Batch processing with progress reporting</li>
+<li><strong>Maintainable</strong>: Clear code structure and documentation</li>
+</ul>
+</div></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#dynamodb-seeding-guide"><span>Dynamo<wbr/>DB <wbr/>Seeding <wbr/>Guide</span></a><ul><li><a href="#overview"><span>Overview</span></a></li><li><a href="#files"><span>Files</span></a></li><li><a href="#petfood-sample-data"><span>Petfood <wbr/>Sample <wbr/>Data</span></a></li><li><a href="#usage-examples"><span>Usage <wbr/>Examples</span></a></li><li><ul><li><a href="#interactive-mode"><span>Interactive <wbr/>Mode</span></a></li><li><a href="#non-interactive-mode"><span>Non-<wbr/>Interactive <wbr/>Mode</span></a></li><li><ul><li><a href="#seed-all-tables"><span>Seed <wbr/>All <wbr/>Tables</span></a></li><li><a href="#seed-by-type"><span>Seed by <wbr/>Type</span></a></li><li><a href="#seed-specific-tables"><span>Seed <wbr/>Specific <wbr/>Tables</span></a></li></ul></li></ul></li><li><a href="#features"><span>Features</span></a></li><li><ul><li><a href="#automatic-table-discovery"><span>Automatic <wbr/>Table <wbr/>Discovery</span></a></li><li><a href="#data-type-conversion"><span>Data <wbr/>Type <wbr/>Conversion</span></a></li><li><ul><li><a href="#pet-data"><span>Pet <wbr/>Data</span></a></li><li><a href="#petfood-data"><span>Petfood <wbr/>Data</span></a></li></ul></li><li><a href="#error-handling"><span>Error <wbr/>Handling</span></a></li><li><a href="#validation-checks"><span>Validation <wbr/>Checks</span></a></li></ul></li><li><a href="#data-structure-examples"><span>Data <wbr/>Structure <wbr/>Examples</span></a></li><li><ul><li><a href="#pet-adoption-data-seedjson"><span>Pet <wbr/>Adoption <wbr/>Data (seed.json)</span></a></li><li><a href="#petfood-data-petfood-seedjson"><span>Petfood <wbr/>Data (petfood-<wbr/>seed.json)</span></a></li></ul></li><li><a href="#prerequisites"><span>Prerequisites</span></a></li><li><a href="#troubleshooting"><span>Troubleshooting</span></a></li><li><ul><li><a href="#common-issues"><span>Common <wbr/>Issues</span></a></li><li><a href="#debug-information"><span>Debug <wbr/>Information</span></a></li></ul></li><li><a href="#integration-with-cdk"><span>Integration with <wbr/>CDK</span></a></li><li><a href="#benefits"><span>Benefits</span></a></li></ul></div></details></div><div class="site-menu"><nav class="tsd-navigation"><a href="../modules.html">One Observability Workshop - v3.0.0</a><ul class="tsd-small-nested-navigation" id="tsd-nav-container"><li>Loading...</li></ul></nav></div></div></div><footer></footer><div class="overlay"></div></body></html>

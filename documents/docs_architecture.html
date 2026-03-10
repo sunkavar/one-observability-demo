@@ -1,0 +1,221 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>docs/architecture | One Observability Workshop - v3.0.0</title><meta name="description" content="Documentation for One Observability Workshop"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script><script async src="../assets/hierarchy.js" id="tsd-hierarchy-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar"><div class="tsd-toolbar-contents container"><a href="../index.html" class="title">One Observability Workshop - v3.0.0</a><div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/><ul role="listbox" id="tsd-search-results"></ul><div id="tsd-search-status" aria-live="polite" aria-atomic="true"><div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-menu"></use></svg></a></div></header><div class="container container-main"><div class="col-content"><div class="tsd-page-title"><ul class="tsd-breadcrumb" aria-label="Breadcrumb"><li><a href="" aria-current="page">docs/architecture</a></li></ul></div><div class="tsd-panel tsd-typography"><!--
+Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+SPDX-License-Identifier: Apache-2.0
+-->
+<h1 id="one-observability-demo-infrastructure-architecture" class="tsd-anchor-link">One Observability Demo - Infrastructure Architecture<a href="#one-observability-demo-infrastructure-architecture" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h1>
+<h2 id="overview" class="tsd-anchor-link">Overview<a href="#overview" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>The One Observability Demo is deployed using AWS CDK with a multi-stage pipeline architecture. The infrastructure is organized into five deployment stages across two waves, plus a standalone microservices stage, creating a comprehensive observability platform for demonstrating AWS monitoring and observability services.</p>
+<h2 id="cdk-pipeline-architecture" class="tsd-anchor-link">CDK Pipeline Architecture<a href="#cdk-pipeline-architecture" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>The deployment follows a CDK Pipelines pattern orchestrated by the <code>CDKPipeline</code> class.</p>
+<h3 id="pipeline-structure" class="tsd-anchor-link">Pipeline Structure<a href="#pipeline-structure" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code><span class="hl-6">Source</span><span class="hl-1"> → </span><span class="hl-6">Synth</span><span class="hl-1"> → </span><span class="hl-6">Core</span><span class="hl-1"> </span><span class="hl-6">Wave</span><span class="hl-1"> → </span><span class="hl-6">Backend</span><span class="hl-1"> </span><span class="hl-6">Wave</span><span class="hl-1"> → </span><span class="hl-6">Microservices</span><span class="hl-1"> </span><span class="hl-6">Stage</span><br/><span class="hl-1">                    ↓             ↓                ↓</span><br/><span class="hl-1">              [</span><span class="hl-6">Core</span><span class="hl-1"> </span><span class="hl-6">Stage</span><span class="hl-1">]   [</span><span class="hl-6">Storage</span><span class="hl-1"> </span><span class="hl-6">Stage</span><span class="hl-1">]   [</span><span class="hl-6">Microservices</span><span class="hl-1">]</span><br/><span class="hl-1">              [</span><span class="hl-6">Containers</span><span class="hl-1">]   [</span><span class="hl-6">Compute</span><span class="hl-1"> </span><span class="hl-6">Stage</span><span class="hl-1">]</span>
+</code><button>Copy</button></pre>
+
+<h3 id="wave-execution" class="tsd-anchor-link">Wave Execution<a href="#wave-execution" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ol>
+<li>
+<p><strong>Core Wave</strong> executes first:</p>
+<ul>
+<li><strong>Core Stage</strong> — Networking, security, observability infrastructure</li>
+<li><strong>Containers Stage</strong> — Builds container images for all 6 microservices via CodePipeline</li>
+</ul>
+</li>
+<li>
+<p><strong>Backend Wave</strong> executes after Core Wave:</p>
+<ul>
+<li><strong>Storage Stage</strong> — Databases, queues, object storage (with post-deployment DynamoDB and RDS seeding steps)</li>
+<li><strong>Compute Stage</strong> — ECS cluster, EKS cluster, load balancers</li>
+</ul>
+</li>
+<li>
+<p><strong>Microservices Stage</strong> executes last (standalone <code>pipeline.addStage()</code>):</p>
+<ul>
+<li>Deploys all 6 microservices, Lambda functions, canaries, and WAF associations</li>
+</ul>
+</li>
+</ol>
+<h3 id="stage-dependencies" class="tsd-anchor-link">Stage Dependencies<a href="#stage-dependencies" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li><strong>Containers Stage</strong> depends on Core Stage for networking</li>
+<li><strong>Storage Stage</strong> depends on Core Stage for VPC</li>
+<li><strong>Compute Stage</strong> depends on Core Stage for VPC and security groups</li>
+<li><strong>Microservices Stage</strong> depends on all previous stages — imports ECS/EKS clusters, databases, queues, and container images via CloudFormation exports</li>
+</ul>
+<h2 id="deployment-stages" class="tsd-anchor-link">Deployment Stages<a href="#deployment-stages" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="1-core-stage" class="tsd-anchor-link">1. Core Stage<a href="#1-core-stage" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Deploys foundational infrastructure required by all other stages.</p>
+<p><strong>Resources</strong>:</p>
+<ul>
+<li>VPC with public/private subnets, NAT gateways</li>
+<li>VPC Endpoints for private AWS service connectivity (SSM, ECR, CloudWatch, X-Ray, STS, EventBridge, S3, DynamoDB)</li>
+<li>Security groups and IAM roles</li>
+<li>CloudTrail audit logging</li>
+<li>EventBridge event bus</li>
+<li>OpenSearch Serverless collection and ingestion pipeline</li>
+</ul>
+<h3 id="2-containers-stage" class="tsd-anchor-link">2. Containers Stage<a href="#2-containers-stage" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Builds and pushes container images for all microservices using a dedicated CodePipeline.</p>
+<p><strong>Microservices Built</strong> (6 applications):</p>
+<table>
+<thead>
+<tr>
+<th>Service</th>
+<th>Language</th>
+<th>Host</th>
+<th>Architecture</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>payforadoption-go</code></td>
+<td>Go</td>
+<td>ECS Fargate</td>
+<td>AMD64</td>
+<td>Payment processing with OpenTelemetry Go SDK</td>
+</tr>
+<tr>
+<td><code>petlistadoption-py</code></td>
+<td>Python/FastAPI</td>
+<td>ECS Fargate</td>
+<td>AMD64</td>
+<td>Pet listing with ADOT auto-instrumentation</td>
+</tr>
+<tr>
+<td><code>petsearch-java</code></td>
+<td>Java/Spring Boot</td>
+<td>ECS Fargate</td>
+<td>AMD64</td>
+<td>Pet search with Application Signals</td>
+</tr>
+<tr>
+<td><code>petsite-net</code></td>
+<td>.NET</td>
+<td>EKS Fargate</td>
+<td>AMD64</td>
+<td>Web frontend with CloudWatch agent</td>
+</tr>
+<tr>
+<td><code>petfood-rs</code></td>
+<td>Rust/Axum</td>
+<td>ECS Fargate</td>
+<td>AMD64</td>
+<td>Food catalog with OpenTelemetry Rust SDK</td>
+</tr>
+<tr>
+<td><code>petfoodagent-strands-py</code></td>
+<td>Python/Strands</td>
+<td>Bedrock AgentCore</td>
+<td>ARM64</td>
+<td>AI agent (container built but not deployed to ECS/EKS)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Pipeline Architecture</strong>:</p>
+<ol>
+<li><strong>Source Stage</strong> — Retrieves source from S3 bucket or CodeConnection (GitHub)</li>
+<li><strong>Build Stage</strong> — Parallel container builds for all 6 microservices</li>
+</ol>
+<h3 id="3-storage-stage" class="tsd-anchor-link">3. Storage Stage<a href="#3-storage-stage" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Deploys data persistence and messaging resources.</p>
+<p><strong>Resources</strong>:</p>
+<ul>
+<li><strong>Amazon DynamoDB</strong> — Pet adoption table, pet foods table, pet foods cart table</li>
+<li><strong>Amazon Aurora PostgreSQL</strong> — Relational database for structured data</li>
+<li><strong>Amazon S3</strong> — Workshop assets bucket with pre-populated pet images, CloudFront distribution for CDN</li>
+<li><strong>Amazon SQS</strong> — Message queue for decoupled communication</li>
+<li><strong>Workshop Assets</strong> — S3 seeding with demo images</li>
+</ul>
+<p><strong>Post-deployment steps</strong>: DynamoDB seeding and RDS seeding run as CodeBuild steps after the stage deploys.</p>
+<h3 id="4-compute-stage" class="tsd-anchor-link">4. Compute Stage<a href="#4-compute-stage" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Deploys container orchestration platforms.</p>
+<p><strong>Resources</strong>:</p>
+<ul>
+<li><strong>Amazon ECS</strong> — Fargate cluster for microservice tasks</li>
+<li><strong>Amazon EKS</strong> — Kubernetes cluster with managed node groups</li>
+<li><strong>Application Load Balancers</strong> — Traffic distribution for ECS and EKS services</li>
+<li><strong>Container Insights</strong> — Enabled on both ECS and EKS clusters</li>
+</ul>
+<p><strong>Note</strong>: Lambda functions and microservice task definitions are deployed in the Microservices Stage, not here. This stage only creates the clusters and load balancers.</p>
+<h3 id="5-microservices-stage" class="tsd-anchor-link">5. Microservices Stage<a href="#5-microservices-stage" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Deploys all microservices, serverless functions, canaries, and WAF rules. This is a standalone <code>pipeline.addStage()</code> call (not inside a wave).</p>
+<p><strong>Microservices</strong> (see table above for details):</p>
+<ul>
+<li>4 ECS services: payforadoption-go, petlistadoption-py, petsearch-java, petfood-rs</li>
+<li>1 EKS deployment: petsite-net (with CloudFront distribution and WAF)</li>
+<li>1 Bedrock AgentCore deployment: petfoodagent-strands-py</li>
+</ul>
+<p><strong>Lambda Functions</strong>:</p>
+<ul>
+<li><strong>StatusUpdater</strong> (Node.js) — Updates pet adoption status in DynamoDB</li>
+<li><strong>UserCreator</strong> (Node.js) — Creates Cognito users for the workshop</li>
+<li><strong>RdsSeeder</strong> (Node.js) — Seeds Aurora PostgreSQL with initial data</li>
+<li><strong>TrafficGenerator</strong> (Node.js) — Generates synthetic traffic for observability demos</li>
+<li><strong>PetfoodStockProcessor</strong> (Node.js) — Processes food stock events from EventBridge</li>
+<li><strong>PetfoodImageGenerator</strong> (Node.js) — Generates pet food images via Bedrock</li>
+<li><strong>PetfoodCleanupProcessor</strong> (Node.js) — Cleans up expired food listings</li>
+</ul>
+<p><strong>Canaries</strong>:</p>
+<ul>
+<li><strong>TrafficGeneratorCanary</strong> — CloudWatch Synthetics canary for continuous traffic</li>
+<li><strong>HousekeepingCanary</strong> — Periodic cleanup of stale resources</li>
+</ul>
+<p><strong>WAF</strong>:</p>
+<ul>
+<li>Regional WAF on ALB</li>
+<li>Global WAF on CloudFront (optional, controlled by feature flag)</li>
+</ul>
+<h2 id="observability-architecture" class="tsd-anchor-link">Observability Architecture<a href="#observability-architecture" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Each microservice demonstrates different observability patterns:</p>
+<h3 id="distributed-tracing" class="tsd-anchor-link">Distributed Tracing<a href="#distributed-tracing" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li><strong>payforadoption-go</strong> — OpenTelemetry Go SDK with ADOT collector sidecar</li>
+<li><strong>petlistadoption-py</strong> — ADOT auto-instrumentation via CloudWatch agent sidecar (manual config required for FastAPI)</li>
+<li><strong>petsearch-java</strong> — Application Signals L2 construct (<code>ApplicationSignalsIntegration</code>) with auto + manual instrumentation</li>
+<li><strong>petsite-net</strong> — CloudWatch agent with Application Signals on EKS</li>
+<li><strong>petfood-rs</strong> — OpenTelemetry Rust SDK with custom Prometheus metrics</li>
+</ul>
+<h3 id="log-routing" class="tsd-anchor-link">Log Routing<a href="#log-routing" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li><strong>FireLens</strong> (Fluent Bit) sidecar on ECS tasks routes logs to CloudWatch Logs</li>
+<li><strong>Container Insights</strong> on ECS and EKS clusters for infrastructure metrics</li>
+<li><strong>OpenSearch</strong> ingestion pipeline for centralized log analytics</li>
+</ul>
+<h3 id="metrics" class="tsd-anchor-link">Metrics<a href="#metrics" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>CloudWatch metrics from all services</li>
+<li>Prometheus metrics exposed by petfood-rs and petlistadoption-py</li>
+<li>Application Signals SLOs on petsearch-java</li>
+</ul>
+<h2 id="security" class="tsd-anchor-link">Security<a href="#security" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ul>
+<li><strong>VPC Isolation</strong> — Private subnets for all compute, VPC endpoints for AWS API calls</li>
+<li><strong>IAM Least Privilege</strong> — Per-service task roles with minimal permissions</li>
+<li><strong>Encryption</strong> — S3 SSE, DynamoDB encryption at rest, Aurora encryption</li>
+<li><strong>WAF</strong> — Regional and global web ACLs</li>
+<li><strong>CDK Nag</strong> — Automated security compliance checking with documented suppressions (see <code>.ash/.ash.yaml</code> for rationale)</li>
+</ul>
+<h2 id="configuration" class="tsd-anchor-link">Configuration<a href="#configuration" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>The pipeline supports two source modes:</p>
+<ul>
+<li><strong>CodeConnection</strong> (GitHub) — Set <code>codeConnectionArn</code> for direct repository integration</li>
+<li><strong>S3 Bucket</strong> — Fallback mode using <code>configBucketName</code> for source code zip</li>
+</ul>
+<p>Configuration parameters can be stored in SSM Parameter Store and retrieved during synthesis via <code>retrieve-config.sh</code>.</p>
+<h2 id="architecture-diagrams" class="tsd-anchor-link">Architecture Diagrams<a href="#architecture-diagrams" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="complete-architecture-overview" class="tsd-anchor-link">Complete Architecture Overview<a href="#complete-architecture-overview" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p><img src="../media/complete-architecture-with-languages.png" alt="Complete Architecture with Languages"></p>
+<h3 id="deployment-stages-flow" class="tsd-anchor-link">Deployment Stages Flow<a href="#deployment-stages-flow" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p><img src="../media/deployment-stages.png" alt="Deployment Stages"></p>
+<h3 id="microservices-runtime-architecture" class="tsd-anchor-link">Microservices Runtime Architecture<a href="#microservices-runtime-architecture" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p><img src="../media/microservices-architecture-with-languages.png" alt="Microservices Architecture"></p>
+<h3 id="stage-specific-resources" class="tsd-anchor-link">Stage-Specific Resources<a href="#stage-specific-resources" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<h4 id="core-stage" class="tsd-anchor-link">Core Stage<a href="#core-stage" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<p><img src="../media/core-stage-resources.png" alt="Core Stage Resources"></p>
+<h4 id="storage-stage" class="tsd-anchor-link">Storage Stage<a href="#storage-stage" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<p><img src="../media/storage-stage-resources.png" alt="Storage Stage Resources"></p>
+<h4 id="compute-stage" class="tsd-anchor-link">Compute Stage<a href="#compute-stage" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<p><img src="../media/compute-stage-resources-corrected.png" alt="Compute Stage Resources"></p>
+<h4 id="observability-stack" class="tsd-anchor-link">Observability Stack<a href="#observability-stack" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<p><img src="../media/observability-architecture.png" alt="Observability Architecture"></p>
+</div></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#one-observability-demo-infrastructure-architecture"><span>One <wbr/>Observability <wbr/>Demo -<wbr/> <wbr/>Infrastructure <wbr/>Architecture</span></a><ul><li><a href="#overview"><span>Overview</span></a></li><li><a href="#cdk-pipeline-architecture"><span>CDK <wbr/>Pipeline <wbr/>Architecture</span></a></li><li><ul><li><a href="#pipeline-structure"><span>Pipeline <wbr/>Structure</span></a></li><li><a href="#wave-execution"><span>Wave <wbr/>Execution</span></a></li><li><a href="#stage-dependencies"><span>Stage <wbr/>Dependencies</span></a></li></ul></li><li><a href="#deployment-stages"><span>Deployment <wbr/>Stages</span></a></li><li><ul><li><a href="#1-core-stage"><span>1. <wbr/>Core <wbr/>Stage</span></a></li><li><a href="#2-containers-stage"><span>2. <wbr/>Containers <wbr/>Stage</span></a></li><li><a href="#3-storage-stage"><span>3. <wbr/>Storage <wbr/>Stage</span></a></li><li><a href="#4-compute-stage"><span>4. <wbr/>Compute <wbr/>Stage</span></a></li><li><a href="#5-microservices-stage"><span>5. <wbr/>Microservices <wbr/>Stage</span></a></li></ul></li><li><a href="#observability-architecture"><span>Observability <wbr/>Architecture</span></a></li><li><ul><li><a href="#distributed-tracing"><span>Distributed <wbr/>Tracing</span></a></li><li><a href="#log-routing"><span>Log <wbr/>Routing</span></a></li><li><a href="#metrics"><span>Metrics</span></a></li></ul></li><li><a href="#security"><span>Security</span></a></li><li><a href="#configuration"><span>Configuration</span></a></li><li><a href="#architecture-diagrams"><span>Architecture <wbr/>Diagrams</span></a></li><li><ul><li><a href="#complete-architecture-overview"><span>Complete <wbr/>Architecture <wbr/>Overview</span></a></li><li><a href="#deployment-stages-flow"><span>Deployment <wbr/>Stages <wbr/>Flow</span></a></li><li><a href="#microservices-runtime-architecture"><span>Microservices <wbr/>Runtime <wbr/>Architecture</span></a></li><li><a href="#stage-specific-resources"><span>Stage-<wbr/>Specific <wbr/>Resources</span></a></li><li><ul><li><a href="#core-stage"><span>Core <wbr/>Stage</span></a></li><li><a href="#storage-stage"><span>Storage <wbr/>Stage</span></a></li><li><a href="#compute-stage"><span>Compute <wbr/>Stage</span></a></li><li><a href="#observability-stack"><span>Observability <wbr/>Stack</span></a></li></ul></li></ul></li></ul></div></details></div><div class="site-menu"><nav class="tsd-navigation"><a href="../modules.html">One Observability Workshop - v3.0.0</a><ul class="tsd-small-nested-navigation" id="tsd-nav-container"><li>Loading...</li></ul></nav></div></div></div><footer></footer><div class="overlay"></div></body></html>

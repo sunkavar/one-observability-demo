@@ -1,0 +1,221 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>docs/CDK_CLEANUP | One Observability Workshop - v3.0.0</title><meta name="description" content="Documentation for One Observability Workshop"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script><script async src="../assets/hierarchy.js" id="tsd-hierarchy-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar"><div class="tsd-toolbar-contents container"><a href="../index.html" class="title">One Observability Workshop - v3.0.0</a><div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/><ul role="listbox" id="tsd-search-results"></ul><div id="tsd-search-status" aria-live="polite" aria-atomic="true"><div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-menu"></use></svg></a></div></header><div class="container container-main"><div class="col-content"><div class="tsd-page-title"><ul class="tsd-breadcrumb" aria-label="Breadcrumb"><li><a href="" aria-current="page">docs/CDK_CLEANUP</a></li></ul></div><div class="tsd-panel tsd-typography"><!--
+Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+SPDX-License-Identifier: Apache-2.0
+-->
+<h1 id="cdk-stack-cleanup-implementation" class="tsd-anchor-link">CDK Stack Cleanup Implementation<a href="#cdk-stack-cleanup-implementation" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h1>
+<h2 id="overview" class="tsd-anchor-link">Overview<a href="#overview" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Automated cleanup mechanism that handles orphaned CDK stacks when the main stack is deleted or when CodeBuild fails. Uses Step Functions with async polling, failure detection, retry capability, and complete resource cleanup on success.</p>
+<h2 id="problem-solved" class="tsd-anchor-link">Problem Solved<a href="#problem-solved" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ul>
+<li><strong>Timeout Limitations</strong>: Original Lambda approach had 15-minute timeout, insufficient for EKS clusters and Aurora databases (30+ minutes)</li>
+<li><strong>Orphaned Resources</strong>: Failed cleanups would delete the cleanup mechanism itself, preventing retry</li>
+<li><strong>Silent Failures</strong>: Stack deletion could complete even if cleanup failed</li>
+</ul>
+<h2 id="architecture" class="tsd-anchor-link">Architecture<a href="#architecture" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="step-function-state-machine-" class="tsd-anchor-link">Step Function State Machine (<code>rCDKCleanupStateMachine</code>)<a href="#step-function-state-machine-" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Orchestrates the entire cleanup process with conditional execution based on results.</p>
+<p><strong>Flow</strong>:</p>
+<pre><code><span class="hl-6">ListTaggedStacks</span><span class="hl-1"> → </span><span class="hl-6">CheckStacksFound</span><span class="hl-1"> → </span><span class="hl-0">DeleteStacks</span><span class="hl-1"> (</span><span class="hl-6">Map</span><span class="hl-1">) → </span><span class="hl-6">CheckDeletionResults</span><span class="hl-1"> → </span><span class="hl-6">EvaluateOverallSuccess</span><br/><span class="hl-1">                                                                                          ↓</span><br/><span class="hl-1">                                                                    </span><span class="hl-6">All</span><span class="hl-1"> </span><span class="hl-6">Success</span><span class="hl-1">? → </span><span class="hl-6">CleanupCDKStagingBucket</span><br/><span class="hl-1">                                                                          ↓              ↓</span><br/><span class="hl-1">                                                                    </span><span class="hl-6">Any</span><span class="hl-1"> </span><span class="hl-6">Failed</span><span class="hl-1">?    </span><span class="hl-6">CleanupCacheBucket</span><br/><span class="hl-1">                                                                          ↓              ↓</span><br/><span class="hl-1">                                                                    </span><span class="hl-6">SkipCleanup</span><span class="hl-1">    </span><span class="hl-6">DeleteCDKToolkitStack</span><br/><span class="hl-1">                                                                       (</span><span class="hl-7">END</span><span class="hl-1">)           ↓</span><br/><span class="hl-1">                                                                              </span><span class="hl-6">CleanupComplete</span><br/><span class="hl-1">                                                                                 (</span><span class="hl-7">END</span><span class="hl-1">)</span>
+</code><button>Copy</button></pre>
+
+<p><strong>Stack Deletion Loop</strong> (per stack):</p>
+<pre><code><span class="hl-6">DescribeStack</span><span class="hl-1"> → </span><span class="hl-6">DeleteStack</span><span class="hl-1"> → </span><span class="hl-0">WaitForDeletion</span><span class="hl-1"> (30</span><span class="hl-6">s</span><span class="hl-1">) → </span><span class="hl-6">CheckDeletionStatus</span><span class="hl-1"> → </span><span class="hl-6">EvaluateDeletionStatus</span><br/><span class="hl-1">     ↓                                                                              ↓</span><br/><span class="hl-6">StackAlreadyDeleted</span><span class="hl-1">                                                    </span><span class="hl-7">DELETE_IN_PROGRESS</span><span class="hl-1"> → </span><span class="hl-6">Loop</span><br/><span class="hl-1">(</span><span class="hl-6">success</span><span class="hl-1">)                                                              </span><span class="hl-7">DELETE_COMPLETE</span><span class="hl-1"> → </span><span class="hl-6">Success</span><br/><span class="hl-1">                                                                       </span><span class="hl-6">Other</span><span class="hl-1"> → </span><span class="hl-6">Failed</span>
+</code><button>Copy</button></pre>
+
+<h3 id="lambda-functions" class="tsd-anchor-link">Lambda Functions<a href="#lambda-functions" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<h4 id="1-stack-lister-" class="tsd-anchor-link">1. Stack Lister (<code>rCDKStackListerFunction</code>)<a href="#1-stack-lister-" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<ul>
+<li>Lists all CDK stacks with matching application tag</li>
+<li>Sorts by sequence tag (highest first) for proper deletion order</li>
+<li>Returns stack names for Step Function processing</li>
+</ul>
+<h4 id="2-deletion-result-checker-" class="tsd-anchor-link">2. Deletion Result Checker (<code>rDeletionResultCheckerFunction</code>)<a href="#2-deletion-result-checker-" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<pre><code class="python">def handler(event, context):
+    all_successful = all(
+        result.get('status') == 'success'
+        for result in event
+        if isinstance(result, dict)
+    )
+    return {'allSuccessful': all_successful}
+</code><button type="button">Copy</button></pre>
+
+<ul>
+<li>Evaluates deletion results from all stacks</li>
+<li>Returns true only if ALL deletions succeeded</li>
+<li>Determines whether cleanup should proceed</li>
+</ul>
+<h4 id="3-bucket-cleanup-" class="tsd-anchor-link">3. Bucket Cleanup (<code>rBucketCleanupFunction</code>)<a href="#3-bucket-cleanup-" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<ul>
+<li>Generic function to clean up S3 buckets</li>
+<li>Accepts <code>bucketName</code> and <code>deleteBucket</code> parameters</li>
+<li>Empties bucket by deleting all objects and versions</li>
+<li>Optionally deletes the bucket itself</li>
+<li>Used for both CDK staging bucket and cache bucket</li>
+<li>Only runs if all stack deletions succeed</li>
+</ul>
+<h4 id="4-cleanup-completion-" class="tsd-anchor-link">4. Cleanup Completion (<code>rCleanupCompletionFunction</code>)<a href="#4-cleanup-completion-" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<p>Deletes all retained resources when cleanup succeeds:</p>
+<ul>
+<li>Lambda functions: stack-lister, deletion-checker, bucket-cleanup, cleanup-monitor, cleanup-completion</li>
+<li>IAM roles: All roles for Lambda functions, Step Function, and EventBridge</li>
+<li>EventBridge rules matching the stack name</li>
+<li>Step Function state machine itself</li>
+</ul>
+<h4 id="5-cleanup-monitor-" class="tsd-anchor-link">5. Cleanup Monitor (<code>rCleanupMonitorFunction</code>)<a href="#5-cleanup-monitor-" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<p>Custom resource that monitors Step Function execution during stack deletion:</p>
+<pre><code class="python">def handler(event, context):
+    if event['RequestType'] in ['Create', 'Update']:
+        cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
+        return
+
+    # Start Step Function and poll for completion
+    sf_client = boto3.client('stepfunctions')
+    execution_arn = sf_client.start_execution(...)['executionArn']
+
+    # Poll every 10 seconds for up to 14 minutes
+    while time.time() - start_time < 840:
+        status = sf_client.describe_execution(executionArn=execution_arn)['status']
+        if status == 'SUCCEEDED':
+            cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
+            return
+        elif status in ['FAILED', 'TIMED_OUT', 'ABORTED']:
+            cfnresponse.send(event, context, cfnresponse.FAILED, {})
+            return
+        time.sleep(10)
+</code><button type="button">Copy</button></pre>
+
+<h3 id="eventbridge-rules" class="tsd-anchor-link">EventBridge Rules<a href="#eventbridge-rules" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<h4 id="stack-deletion-trigger-" class="tsd-anchor-link">Stack Deletion Trigger (<code>rStackDeletionRule</code>)<a href="#stack-deletion-trigger-" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<ul>
+<li>Monitors CloudFormation stack status changes</li>
+<li>Triggers cleanup when main stack enters <code>DELETE_IN_PROGRESS</code></li>
+<li>Provides async trigger (in addition to synchronous custom resource)</li>
+</ul>
+<h4 id="codebuild-failure-trigger-" class="tsd-anchor-link">CodeBuild Failure Trigger (<code>rCodeBuildFailureRule</code>)<a href="#codebuild-failure-trigger-" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<ul>
+<li>Monitors CodeBuild project status</li>
+<li>Triggers cleanup on <code>FAILED</code>, <code>FAULT</code>, <code>STOPPED</code>, or <code>TIMED_OUT</code></li>
+</ul>
+<h3 id="resources-with-retain-policy" class="tsd-anchor-link">Resources with Retain Policy<a href="#resources-with-retain-policy" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>All cleanup resources have <code>DeletionPolicy: Retain</code> to enable retry on failure:</p>
+<ul>
+<li>Step Function state machine</li>
+<li>Lambda functions (5 total)</li>
+<li>IAM roles (6 total)</li>
+<li>EventBridge rules and role</li>
+</ul>
+<p>These are automatically deleted by <code>rCleanupCompletionFunction</code> on successful cleanup.</p>
+<h2 id="execution-workflows" class="tsd-anchor-link">Execution Workflows<a href="#execution-workflows" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="successful-cleanup" class="tsd-anchor-link">Successful Cleanup<a href="#successful-cleanup" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ol>
+<li>CloudFormation stack deletion initiated</li>
+<li><code>rCleanupMonitor</code> custom resource starts Step Function</li>
+<li>Step Function lists CDK stacks by application tag</li>
+<li>Each stack deleted sequentially with async polling</li>
+<li>All deletions succeed → <code>{\&quot;status\&quot;: \&quot;success\&quot;}</code></li>
+<li><code>rDeletionResultCheckerFunction</code> confirms all successful</li>
+<li>CDK staging bucket cleaned up and deleted</li>
+<li>Cache bucket emptied (bucket retained)</li>
+<li>CDK bootstrap stack (<code>CDKToolkitPetsite</code>) deleted</li>
+<li><code>rCleanupCompletionFunction</code> removes all retained resources</li>
+<li>Step Function completes successfully</li>
+<li><code>rCleanupMonitor</code> signals SUCCESS to CloudFormation</li>
+<li>CloudFormation stack deletion completes</li>
+<li><strong>Result</strong>: No resources left behind</li>
+</ol>
+<h3 id="failed-cleanup" class="tsd-anchor-link">Failed Cleanup<a href="#failed-cleanup" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ol>
+<li>CloudFormation stack deletion initiated</li>
+<li><code>rCleanupMonitor</code> custom resource starts Step Function</li>
+<li>Step Function lists CDK stacks by application tag</li>
+<li>One or more stack deletions fail → <code>{\&quot;status\&quot;: \&quot;failed\&quot;}</code></li>
+<li><code>rDeletionResultCheckerFunction</code> detects failure</li>
+<li>Step Function skips cleanup steps and ends early</li>
+<li><code>rCleanupMonitor</code> detects Step Function failure</li>
+<li><code>rCleanupMonitor</code> signals FAILURE to CloudFormation</li>
+<li>CloudFormation stack deletion fails (DELETE_FAILED)</li>
+<li><strong>Result</strong>: All cleanup resources preserved for retry</li>
+</ol>
+<h3 id="retry-after-failure" class="tsd-anchor-link">Retry After Failure<a href="#retry-after-failure" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ol>
+<li>Investigate Step Function execution history to identify failed stack</li>
+<li>Manually resolve the issue (e.g., remove dependencies, fix permissions)</li>
+<li>Delete the CloudFormation stack again</li>
+<li>Step Function automatically runs and retries cleanup</li>
+<li>If successful, all resources cleaned up; if failed, preserved for another retry</li>
+</ol>
+<h2 id="key-features" class="tsd-anchor-link">Key Features<a href="#key-features" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="async-polling-with-no-timeout-limits" class="tsd-anchor-link">Async Polling with No Timeout Limits<a href="#async-polling-with-no-timeout-limits" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>Step Functions can run for up to 1 year</li>
+<li>30-second wait between status checks</li>
+<li>Handles long-running deletions (EKS: 20-45 min, Aurora: 15-30 min)</li>
+<li>Lambda only runs for quick checks (60s max)</li>
+</ul>
+<h3 id="failure-detection-and-protection" class="tsd-anchor-link">Failure Detection and Protection<a href="#failure-detection-and-protection" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>Deletion results tracked for each stack</li>
+<li>Cleanup only proceeds if ALL deletions succeed</li>
+<li>CloudFormation stack deletion fails if cleanup incomplete</li>
+<li>Prevents false sense of completion</li>
+</ul>
+<h3 id="retry-capability" class="tsd-anchor-link">Retry Capability<a href="#retry-capability" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>Failed cleanups preserve all cleanup resources</li>
+<li>Step Function can be manually triggered or automatically retried</li>
+<li>All necessary resources remain available for retry</li>
+</ul>
+<h3 id="complete-cleanup-on-success" class="tsd-anchor-link">Complete Cleanup on Success<a href="#complete-cleanup-on-success" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>All Lambda functions deleted</li>
+<li>All IAM roles removed</li>
+<li>EventBridge rules cleaned up</li>
+<li>Step Function state machine deleted</li>
+<li>No resources left behind, no ongoing costs</li>
+</ul>
+<h3 id="dependency-handling" class="tsd-anchor-link">Dependency Handling<a href="#dependency-handling" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>Stacks deleted sequentially (MaxConcurrency: 1)</li>
+<li>Sorted by sequence tag for proper order</li>
+<li>Failed deletions don't stop the entire process</li>
+<li>Missing stacks handled gracefully</li>
+</ul>
+<h2 id="monitoring-and-troubleshooting" class="tsd-anchor-link">Monitoring and Troubleshooting<a href="#monitoring-and-troubleshooting" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="monitoring-cleanup-progress" class="tsd-anchor-link">Monitoring Cleanup Progress<a href="#monitoring-cleanup-progress" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ol>
+<li><strong>Step Function Console</strong>: View execution history and state transitions</li>
+<li><strong>CloudWatch Logs</strong>: Lambda function logs for detailed information</li>
+<li><strong>CloudFormation Events</strong>: Stack deletion events and status</li>
+</ol>
+<h3 id="troubleshooting-failed-cleanup" class="tsd-anchor-link">Troubleshooting Failed Cleanup<a href="#troubleshooting-failed-cleanup" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ol>
+<li>Check Step Function execution history for failed state</li>
+<li>Review Lambda logs for specific error messages</li>
+<li>Identify which CDK stack failed to delete</li>
+<li>Check CloudFormation stack events for the failed stack</li>
+<li>Resolve the issue (dependencies, permissions, etc.)</li>
+<li>Retry by deleting the main CloudFormation stack again</li>
+</ol>
+<h3 id="common-failure-scenarios" class="tsd-anchor-link">Common Failure Scenarios<a href="#common-failure-scenarios" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li><strong>Dependency Issues</strong>: Resources in other stacks depend on the stack being deleted</li>
+<li><strong>Permission Issues</strong>: IAM permissions insufficient for deletion</li>
+<li><strong>Resource Locks</strong>: Resources have deletion protection enabled</li>
+<li><strong>Timeout</strong>: Stack deletion takes longer than expected (rare with async approach)</li>
+</ul>
+<h2 id="benefits" class="tsd-anchor-link">Benefits<a href="#benefits" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ol>
+<li><strong>No Timeout Limitations</strong>: Handles long-running deletions without Lambda timeout constraints</li>
+<li><strong>Prevents Orphaned Resources</strong>: Automatically cleans up CDK stacks and bootstrap resources</li>
+<li><strong>Cost Optimization</strong>: No resources left behind on success, minimal cost during failure</li>
+<li><strong>Retry Capability</strong>: Failed cleanups can be retried after fixing issues</li>
+<li><strong>Failure Protection</strong>: Stack deletion fails if cleanup incomplete, preventing silent failures</li>
+<li><strong>Operational Excellence</strong>: Automated cleanup with clear failure indication</li>
+<li><strong>Better Observability</strong>: Clear state transitions and comprehensive logging</li>
+<li><strong>Resource Efficiency</strong>: No compute resources wasted during wait periods</li>
+</ol>
+<h2 id="outputs" class="tsd-anchor-link">Outputs<a href="#outputs" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ul>
+<li><code>oCDKCleanupStateMachine</code>: ARN of the cleanup Step Function for monitoring and manual triggering</li>
+</ul>
+</div></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#cdk-stack-cleanup-implementation"><span>CDK <wbr/>Stack <wbr/>Cleanup <wbr/>Implementation</span></a><ul><li><a href="#overview"><span>Overview</span></a></li><li><a href="#problem-solved"><span>Problem <wbr/>Solved</span></a></li><li><a href="#architecture"><span>Architecture</span></a></li><li><ul><li><a href="#step-function-state-machine-"><span>Step <wbr/>Function <wbr/>State <wbr/>Machine ()</span></a></li><li><a href="#lambda-functions"><span>Lambda <wbr/>Functions</span></a></li><li><ul><li><a href="#1-stack-lister-"><span>1. <wbr/>Stack <wbr/>Lister ()</span></a></li><li><a href="#2-deletion-result-checker-"><span>2. <wbr/>Deletion <wbr/>Result <wbr/>Checker ()</span></a></li><li><a href="#3-bucket-cleanup-"><span>3. <wbr/>Bucket <wbr/>Cleanup ()</span></a></li><li><a href="#4-cleanup-completion-"><span>4. <wbr/>Cleanup <wbr/>Completion ()</span></a></li><li><a href="#5-cleanup-monitor-"><span>5. <wbr/>Cleanup <wbr/>Monitor ()</span></a></li></ul></li><li><a href="#eventbridge-rules"><span>Event<wbr/>Bridge <wbr/>Rules</span></a></li><li><ul><li><a href="#stack-deletion-trigger-"><span>Stack <wbr/>Deletion <wbr/>Trigger ()</span></a></li><li><a href="#codebuild-failure-trigger-"><span>Code<wbr/>Build <wbr/>Failure <wbr/>Trigger ()</span></a></li></ul></li><li><a href="#resources-with-retain-policy"><span>Resources with <wbr/>Retain <wbr/>Policy</span></a></li></ul></li><li><a href="#execution-workflows"><span>Execution <wbr/>Workflows</span></a></li><li><ul><li><a href="#successful-cleanup"><span>Successful <wbr/>Cleanup</span></a></li><li><a href="#failed-cleanup"><span>Failed <wbr/>Cleanup</span></a></li><li><a href="#retry-after-failure"><span>Retry <wbr/>After <wbr/>Failure</span></a></li></ul></li><li><a href="#key-features"><span>Key <wbr/>Features</span></a></li><li><ul><li><a href="#async-polling-with-no-timeout-limits"><span>Async <wbr/>Polling with <wbr/>No <wbr/>Timeout <wbr/>Limits</span></a></li><li><a href="#failure-detection-and-protection"><span>Failure <wbr/>Detection and <wbr/>Protection</span></a></li><li><a href="#retry-capability"><span>Retry <wbr/>Capability</span></a></li><li><a href="#complete-cleanup-on-success"><span>Complete <wbr/>Cleanup on <wbr/>Success</span></a></li><li><a href="#dependency-handling"><span>Dependency <wbr/>Handling</span></a></li></ul></li><li><a href="#monitoring-and-troubleshooting"><span>Monitoring and <wbr/>Troubleshooting</span></a></li><li><ul><li><a href="#monitoring-cleanup-progress"><span>Monitoring <wbr/>Cleanup <wbr/>Progress</span></a></li><li><a href="#troubleshooting-failed-cleanup"><span>Troubleshooting <wbr/>Failed <wbr/>Cleanup</span></a></li><li><a href="#common-failure-scenarios"><span>Common <wbr/>Failure <wbr/>Scenarios</span></a></li></ul></li><li><a href="#benefits"><span>Benefits</span></a></li><li><a href="#outputs"><span>Outputs</span></a></li></ul></div></details></div><div class="site-menu"><nav class="tsd-navigation"><a href="../modules.html">One Observability Workshop - v3.0.0</a><ul class="tsd-small-nested-navigation" id="tsd-nav-container"><li>Loading...</li></ul></nav></div></div></div><footer></footer><div class="overlay"></div></body></html>

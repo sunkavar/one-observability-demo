@@ -1,0 +1,215 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>docs/application-redeployment | One Observability Workshop - v3.0.0</title><meta name="description" content="Documentation for One Observability Workshop"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script><script async src="../assets/hierarchy.js" id="tsd-hierarchy-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar"><div class="tsd-toolbar-contents container"><a href="../index.html" class="title">One Observability Workshop - v3.0.0</a><div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/><ul role="listbox" id="tsd-search-results"></ul><div id="tsd-search-status" aria-live="polite" aria-atomic="true"><div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-menu"></use></svg></a></div></header><div class="container container-main"><div class="col-content"><div class="tsd-page-title"><ul class="tsd-breadcrumb" aria-label="Breadcrumb"><li><a href="" aria-current="page">docs/application-redeployment</a></li></ul></div><div class="tsd-panel tsd-typography"><!--
+Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+SPDX-License-Identifier: Apache-2.0
+-->
+<h1 id="application-redeployment-guide" class="tsd-anchor-link">Application Redeployment Guide<a href="#application-redeployment-guide" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h1>
+<p>This guide explains how to use the application redeployment script to quickly deploy new versions of microservices for testing and development.</p>
+<h2 id="overview" class="tsd-anchor-link">Overview<a href="#overview" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>The <code>redeploy-app.sh</code> script automates the process of:</p>
+<ol>
+<li>Building container images with cross-platform support</li>
+<li>Pushing images to Amazon ECR</li>
+<li>Triggering service redeployments on ECS or providing EKS instructions</li>
+</ol>
+<h2 id="prerequisites" class="tsd-anchor-link">Prerequisites<a href="#prerequisites" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="required-tools" class="tsd-anchor-link">Required Tools<a href="#required-tools" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>
+<p><strong>AWS CLI</strong>: Configured with credentials for your target account</p>
+</li>
+<li>
+<p><strong>Container Runtime</strong>: One of the following:</p>
+<ul>
+<li>Docker (recommended)</li>
+<li>Finch</li>
+<li>Podman</li>
+</ul>
+<p>The script will auto-detect available tools in priority order (docker → finch → podman), or you can specify your preferred tool as the first argument to the script.</p>
+</li>
+</ul>
+<h3 id="configuration-file" class="tsd-anchor-link">Configuration File<a href="#configuration-file" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li><strong>Environment File</strong>: <code>src/cdk/.env</code> must exist with the following variables:
+<ul>
+<li><code>AWS_REGION</code>: Target AWS region</li>
+<li><code>AWS_ACCOUNT_ID</code>: Your AWS account ID</li>
+</ul>
+</li>
+</ul>
+<h3 id="aws-permissions" class="tsd-anchor-link">AWS Permissions<a href="#aws-permissions" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Your AWS credentials must have permissions for:</p>
+<ul>
+<li>ECR: <code>GetAuthorizationToken</code>, <code>BatchCheckLayerAvailability</code>, <code>GetDownloadUrlForLayer</code>, <code>BatchGetImage</code>, <code>PutImage</code></li>
+<li>ECS: <code>ListClusters</code>, <code>ListServices</code>, <code>DescribeServices</code>, <code>UpdateService</code></li>
+<li>STS: <code>GetCallerIdentity</code></li>
+</ul>
+<h3 id="infrastructure-requirements" class="tsd-anchor-link">Infrastructure Requirements<a href="#infrastructure-requirements" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>One Observability Demo infrastructure must be deployed</li>
+<li>ECR repositories must exist for the applications</li>
+<li>ECS clusters and services (for ECS-hosted applications)</li>
+<li>EKS cluster with kubectl access (for EKS-hosted applications)</li>
+</ul>
+<h2 id="usage" class="tsd-anchor-link">Usage<a href="#usage" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="basic-usage" class="tsd-anchor-link">Basic Usage<a href="#basic-usage" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ol>
+<li>
+<p>Navigate to the repository root:</p>
+<pre><code class="bash"><span class="hl-0">cd</span><span class="hl-1"> </span><span class="hl-2">/path/to/one-observability-demo</span>
+</code><button type="button">Copy</button></pre>
+
+</li>
+<li>
+<p>Run the script:</p>
+<pre><code class="bash"><span class="hl-5"># Auto-detect OCI tool (docker, finch, or podman)</span><br/><span class="hl-0">./src/cdk/scripts/redeploy-app.sh</span><br/><br/><span class="hl-5"># Or specify a specific OCI tool</span><br/><span class="hl-0">./src/cdk/scripts/redeploy-app.sh</span><span class="hl-1"> </span><span class="hl-2">docker</span><br/><span class="hl-0">./src/cdk/scripts/redeploy-app.sh</span><span class="hl-1"> </span><span class="hl-2">finch</span><br/><span class="hl-0">./src/cdk/scripts/redeploy-app.sh</span><span class="hl-1"> </span><span class="hl-2">podman</span>
+</code><button type="button">Copy</button></pre>
+
+</li>
+<li>
+<p>Follow the interactive prompts:</p>
+<ul>
+<li>Select the application to redeploy</li>
+<li>Select the target platform (amd64 or arm64)</li>
+<li>For ECS applications: Select cluster and service</li>
+<li>For EKS applications: Follow the provided kubectl instructions</li>
+</ul>
+</li>
+</ol>
+<h3 id="available-applications" class="tsd-anchor-link">Available Applications<a href="#available-applications" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>The script automatically reads from <code>src/cdk/bin/environment.ts</code> and presents all configured applications:</p>
+<table>
+<thead>
+<tr>
+<th>Application</th>
+<th>Host Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>payforadoption-go</td>
+<td>ECS</td>
+<td>Payment processing service (Go)</td>
+</tr>
+<tr>
+<td>petlistadoption-py</td>
+<td>ECS</td>
+<td>Pet listing service (Python/FastAPI)</td>
+</tr>
+<tr>
+<td>petsearch-java</td>
+<td>ECS</td>
+<td>Pet search service (Java/Spring Boot)</td>
+</tr>
+<tr>
+<td>petsite-net</td>
+<td>EKS</td>
+<td>Frontend web application (.NET)</td>
+</tr>
+<tr>
+<td>petfood-rs</td>
+<td>ECS</td>
+<td>Food catalog and cart API (Rust/Axum)</td>
+</tr>
+<tr>
+<td>petfoodagent-strands-py</td>
+<td>None</td>
+<td>AI agent (Bedrock AgentCore, container build only)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="platform-selection" class="tsd-anchor-link">Platform Selection<a href="#platform-selection" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>The script prompts you to select the target platform architecture:</p>
+<ul>
+<li><strong>amd64 (default)</strong>: For x86_64 AWS instances (most common)</li>
+<li><strong>arm64</strong>: For ARM-based AWS instances (Graviton)</li>
+</ul>
+<p>The script automatically handles cross-platform builds:</p>
+<ul>
+<li><strong>Docker</strong>: Uses <code>buildx</code> with <code>--platform</code> flag</li>
+<li><strong>Finch/Podman</strong>: Uses <code>--platform</code> flag with QEMU emulation</li>
+</ul>
+<h2 id="ecs-deployment-process" class="tsd-anchor-link">ECS Deployment Process<a href="#ecs-deployment-process" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>For ECS-hosted applications, the script:</p>
+<ol>
+<li>Lists all available ECS clusters</li>
+<li>Auto-selects if only one cluster exists, otherwise prompts for selection</li>
+<li>Lists all services in the selected cluster</li>
+<li>Prompts for service selection</li>
+<li>Triggers a forced redeployment using <code>aws ecs update-service --force-new-deployment</code></li>
+</ol>
+<h3 id="monitoring-ecs-deployments" class="tsd-anchor-link">Monitoring ECS Deployments<a href="#monitoring-ecs-deployments" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>After triggering a redeployment, monitor progress with:</p>
+<pre><code class="bash"><span class="hl-5"># Check service status</span><br/><span class="hl-0">aws</span><span class="hl-1"> </span><span class="hl-2">ecs</span><span class="hl-1"> </span><span class="hl-2">describe-services</span><span class="hl-1"> </span><span class="hl-4">--cluster</span><span class="hl-1"> &lt;</span><span class="hl-2">cluster-nam</span><span class="hl-1">e&gt; </span><span class="hl-4">--services</span><span class="hl-1"> &lt;</span><span class="hl-2">service-nam</span><span class="hl-1">e&gt;</span><br/><br/><span class="hl-5"># Watch deployment events</span><br/><span class="hl-0">aws</span><span class="hl-1"> </span><span class="hl-2">ecs</span><span class="hl-1"> </span><span class="hl-2">describe-services</span><span class="hl-1"> </span><span class="hl-4">--cluster</span><span class="hl-1"> &lt;</span><span class="hl-2">cluster-nam</span><span class="hl-1">e&gt; </span><span class="hl-4">--services</span><span class="hl-1"> &lt;</span><span class="hl-2">service-nam</span><span class="hl-1">e&gt; </span><span class="hl-3">\</span><br/><span class="hl-1">  </span><span class="hl-4">--query</span><span class="hl-1"> </span><span class="hl-2">&#39;services[0].events[0:5]&#39;</span><span class="hl-1"> </span><span class="hl-4">--output</span><span class="hl-1"> </span><span class="hl-2">table</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="eks-deployment-process" class="tsd-anchor-link">EKS Deployment Process<a href="#eks-deployment-process" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>For EKS-hosted applications (like <code>petsite-net</code>), the script provides kubectl commands for manual restart:</p>
+<pre><code class="bash"><span class="hl-5"># Restart deployment</span><br/><span class="hl-0">kubectl</span><span class="hl-1"> </span><span class="hl-2">rollout</span><span class="hl-1"> </span><span class="hl-2">restart</span><span class="hl-1"> </span><span class="hl-2">deployment/petsite</span><br/><br/><span class="hl-5"># Check deployment status</span><br/><span class="hl-0">kubectl</span><span class="hl-1"> </span><span class="hl-2">rollout</span><span class="hl-1"> </span><span class="hl-2">status</span><span class="hl-1"> </span><span class="hl-2">deployment/petsite</span><br/><br/><span class="hl-5"># View pods</span><br/><span class="hl-0">kubectl</span><span class="hl-1"> </span><span class="hl-2">get</span><span class="hl-1"> </span><span class="hl-2">pods</span><span class="hl-1"> </span><span class="hl-4">-l</span><span class="hl-1"> </span><span class="hl-2">app=petsite</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="troubleshooting" class="tsd-anchor-link">Troubleshooting<a href="#troubleshooting" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="common-issues" class="tsd-anchor-link">Common Issues<a href="#common-issues" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p><strong>Error: No OCI runner found</strong></p>
+<ul>
+<li>Install Docker, Finch, or Podman</li>
+<li>Ensure the tool is in your PATH</li>
+</ul>
+<p><strong>Error: Not logged into AWS</strong></p>
+<ul>
+<li>Configure AWS CLI: <code>aws configure</code></li>
+<li>Or use AWS SSO: <code>aws sso login</code></li>
+</ul>
+<p><strong>Error: ECR login failed</strong></p>
+<ul>
+<li>Verify AWS credentials have ECR permissions</li>
+<li>Check if ECR repositories exist in your account</li>
+</ul>
+<p><strong>Error: No ECS clusters found</strong></p>
+<ul>
+<li>Ensure One Observability Demo infrastructure is deployed</li>
+<li>Verify you're in the correct AWS region</li>
+</ul>
+<p><strong>Error: Cross-platform build failed</strong></p>
+<ul>
+<li>For Docker: Enable buildx with <code>docker buildx create --use</code></li>
+<li>For Podman: Update to latest version with multi-arch support</li>
+</ul>
+<h3 id="debug-mode" class="tsd-anchor-link">Debug Mode<a href="#debug-mode" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Run with debug output:</p>
+<pre><code class="bash"><span class="hl-0">bash</span><span class="hl-1"> </span><span class="hl-4">-x</span><span class="hl-1"> </span><span class="hl-2">./src/cdk/scripts/redeploy-app.sh</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="manual-ecr-operations" class="tsd-anchor-link">Manual ECR Operations<a href="#manual-ecr-operations" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>If needed, perform ECR operations manually:</p>
+<pre><code class="bash"><span class="hl-5"># Login to ECR</span><br/><span class="hl-0">aws</span><span class="hl-1"> </span><span class="hl-2">ecr</span><span class="hl-1"> </span><span class="hl-2">get-login-password</span><span class="hl-1"> </span><span class="hl-4">--region</span><span class="hl-1"> </span><span class="hl-2">us-east-1</span><span class="hl-1"> | </span><span class="hl-3">\</span><br/><span class="hl-1">  </span><span class="hl-0">docker</span><span class="hl-1"> </span><span class="hl-2">login</span><span class="hl-1"> </span><span class="hl-4">--username</span><span class="hl-1"> </span><span class="hl-2">AWS</span><span class="hl-1"> </span><span class="hl-4">--password-stdin</span><span class="hl-1"> </span><span class="hl-3">\</span><br/><span class="hl-1">  </span><span class="hl-2">123456789012.dkr.ecr.us-east-1.amazonaws.com</span><br/><br/><span class="hl-5"># Build and push</span><br/><span class="hl-0">docker</span><span class="hl-1"> </span><span class="hl-2">buildx</span><span class="hl-1"> </span><span class="hl-2">build</span><span class="hl-1"> </span><span class="hl-4">--platform</span><span class="hl-1"> </span><span class="hl-2">linux/amd64</span><span class="hl-1"> </span><span class="hl-3">\</span><br/><span class="hl-1">  </span><span class="hl-4">-t</span><span class="hl-1"> </span><span class="hl-2">123456789012.dkr.ecr.us-east-1.amazonaws.com/petsite:latest</span><span class="hl-1"> </span><span class="hl-3">\</span><br/><span class="hl-1">  </span><span class="hl-4">--push</span><span class="hl-1"> </span><span class="hl-2">.</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="script-configuration" class="tsd-anchor-link">Script Configuration<a href="#script-configuration" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="environment-file" class="tsd-anchor-link">Environment File<a href="#environment-file" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>The script reads AWS configuration from <code>src/cdk/.env</code>:</p>
+<pre><code class="bash"><span class="hl-6">AWS_REGION</span><span class="hl-1">=</span><span class="hl-2">us-east-1</span><br/><span class="hl-6">AWS_ACCOUNT_ID</span><span class="hl-1">=</span><span class="hl-2">123456789012</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="application-configuration" class="tsd-anchor-link">Application Configuration<a href="#application-configuration" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>The script reads application configurations from <code>src/cdk/bin/environment.ts</code>, specifically the <code>APPLICATION_LIST</code> constant. To add new applications:</p>
+<ol>
+<li>Define the application in <code>environment.ts</code></li>
+<li>Add it to the <code>APPLICATION_LIST</code> array</li>
+<li>The script will automatically detect it</li>
+</ol>
+<h2 id="security-considerations" class="tsd-anchor-link">Security Considerations<a href="#security-considerations" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ul>
+<li>The script uses your current AWS credentials</li>
+<li>Container images are pushed to ECR in your account</li>
+<li>ECS service updates trigger new task deployments</li>
+<li>Ensure your development images don't contain sensitive data</li>
+</ul>
+<h2 id="performance-tips" class="tsd-anchor-link">Performance Tips<a href="#performance-tips" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ul>
+<li>Use Docker buildx for faster multi-platform builds</li>
+<li>Consider using ECR image scanning for security</li>
+<li>Monitor ECS service metrics during deployments</li>
+<li>Use ECS deployment circuit breaker for safer rollouts</li>
+</ul>
+</div></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#application-redeployment-guide"><span>Application <wbr/>Redeployment <wbr/>Guide</span></a><ul><li><a href="#overview"><span>Overview</span></a></li><li><a href="#prerequisites"><span>Prerequisites</span></a></li><li><ul><li><a href="#required-tools"><span>Required <wbr/>Tools</span></a></li><li><a href="#configuration-file"><span>Configuration <wbr/>File</span></a></li><li><a href="#aws-permissions"><span>AWS <wbr/>Permissions</span></a></li><li><a href="#infrastructure-requirements"><span>Infrastructure <wbr/>Requirements</span></a></li></ul></li><li><a href="#usage"><span>Usage</span></a></li><li><ul><li><a href="#basic-usage"><span>Basic <wbr/>Usage</span></a></li><li><a href="#available-applications"><span>Available <wbr/>Applications</span></a></li></ul></li><li><a href="#platform-selection"><span>Platform <wbr/>Selection</span></a></li><li><a href="#ecs-deployment-process"><span>ECS <wbr/>Deployment <wbr/>Process</span></a></li><li><ul><li><a href="#monitoring-ecs-deployments"><span>Monitoring <wbr/>ECS <wbr/>Deployments</span></a></li></ul></li><li><a href="#eks-deployment-process"><span>EKS <wbr/>Deployment <wbr/>Process</span></a></li><li><a href="#troubleshooting"><span>Troubleshooting</span></a></li><li><ul><li><a href="#common-issues"><span>Common <wbr/>Issues</span></a></li><li><a href="#debug-mode"><span>Debug <wbr/>Mode</span></a></li><li><a href="#manual-ecr-operations"><span>Manual <wbr/>ECR <wbr/>Operations</span></a></li></ul></li><li><a href="#script-configuration"><span>Script <wbr/>Configuration</span></a></li><li><ul><li><a href="#environment-file"><span>Environment <wbr/>File</span></a></li><li><a href="#application-configuration"><span>Application <wbr/>Configuration</span></a></li></ul></li><li><a href="#security-considerations"><span>Security <wbr/>Considerations</span></a></li><li><a href="#performance-tips"><span>Performance <wbr/>Tips</span></a></li></ul></div></details></div><div class="site-menu"><nav class="tsd-navigation"><a href="../modules.html">One Observability Workshop - v3.0.0</a><ul class="tsd-small-nested-navigation" id="tsd-nav-container"><li>Loading...</li></ul></nav></div></div></div><footer></footer><div class="overlay"></div></body></html>
