@@ -1,5 +1,5 @@
 """Pet Food Recommendation Agent using Amazon Bedrock AgentCore and Strands SDK."""
-
+import tracing
 import os
 import boto3
 import logging
@@ -125,7 +125,7 @@ async def pet_food_agent_bedrock(payload):
         # Stream response from agent
         async for event in agent.stream_async(user_input):
             if "data" in event:
-                yield event["data"]
+                yield {"text": event["data"]}
 
     except Exception as e:
         error_msg = (
@@ -133,7 +133,7 @@ async def pet_food_agent_bedrock(payload):
             f"your request: {e}"
         )
         print(f"Error in agent execution: {e}")
-        yield error_msg
+        yield {"text": error_msg}
 
 
 if __name__ == "__main__":
