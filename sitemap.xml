@@ -321,15 +321,79 @@
          <lastmod>2026-08-19</lastmod>
     </url>
     <url>
-         <loc>https://aws-samples.github.io/one-observability-demo/api/microservices/petfood-agent/</loc>
+         <loc>https://aws-samples.github.io/one-observability-demo/api/microservices/petfood-agents-autoreload/</loc>
          <lastmod>2026-08-19</lastmod>
     </url>
     <url>
-         <loc>https://aws-samples.github.io/one-observability-demo/api/microservices/petfood-agent/classes/PetFoodAgentConstruct/</loc>
+         <loc>https://aws-samples.github.io/one-observability-demo/api/microservices/petfood-agents-autoreload/classes/PetFoodAgentsAutoReload/</loc>
          <lastmod>2026-08-19</lastmod>
     </url>
     <url>
-         <loc>https://aws-samples.github.io/one-observability-demo/api/microservices/petfood-agent/interfaces/PetFoodAgentProperties/</loc>
+         <loc>https://aws-samples.github.io/one-observability-demo/api/microservices/petfood-agents-autoreload/interfaces/PetFoodAgentsAutoReloadProperties/</loc>
+         <lastmod>2026-08-19</lastmod>
+    </url>
+    <url>
+         <loc>https://aws-samples.github.io/one-observability-demo/api/microservices/petfood-agents-gateway/</loc>
+         <lastmod>2026-08-19</lastmod>
+    </url>
+    <url>
+         <loc>https://aws-samples.github.io/one-observability-demo/api/microservices/petfood-agents-gateway/classes/PetFoodAgentsGateway/</loc>
+         <lastmod>2026-08-19</lastmod>
+    </url>
+    <url>
+         <loc>https://aws-samples.github.io/one-observability-demo/api/microservices/petfood-agents-gateway/interfaces/AgentGatewayTarget/</loc>
+         <lastmod>2026-08-19</lastmod>
+    </url>
+    <url>
+         <loc>https://aws-samples.github.io/one-observability-demo/api/microservices/petfood-agents-gateway/interfaces/PetFoodAgentsGatewayProperties/</loc>
+         <lastmod>2026-08-19</lastmod>
+    </url>
+    <url>
+         <loc>https://aws-samples.github.io/one-observability-demo/api/microservices/petfood-agents-guardrail/</loc>
+         <lastmod>2026-08-19</lastmod>
+    </url>
+    <url>
+         <loc>https://aws-samples.github.io/one-observability-demo/api/microservices/petfood-agents-guardrail/classes/PetFoodAgentsGuardrail/</loc>
+         <lastmod>2026-08-19</lastmod>
+    </url>
+    <url>
+         <loc>https://aws-samples.github.io/one-observability-demo/api/microservices/petfood-agents-guardrail/interfaces/PetFoodAgentsGuardrailProperties/</loc>
+         <lastmod>2026-08-19</lastmod>
+    </url>
+    <url>
+         <loc>https://aws-samples.github.io/one-observability-demo/api/microservices/petfood-agents-memory/</loc>
+         <lastmod>2026-08-19</lastmod>
+    </url>
+    <url>
+         <loc>https://aws-samples.github.io/one-observability-demo/api/microservices/petfood-agents-memory/classes/PetFoodAgentsMemory/</loc>
+         <lastmod>2026-08-19</lastmod>
+    </url>
+    <url>
+         <loc>https://aws-samples.github.io/one-observability-demo/api/microservices/petfood-agents-memory/interfaces/PetFoodAgentsMemoryProperties/</loc>
+         <lastmod>2026-08-19</lastmod>
+    </url>
+    <url>
+         <loc>https://aws-samples.github.io/one-observability-demo/api/microservices/petfood-agents-runtime/</loc>
+         <lastmod>2026-08-19</lastmod>
+    </url>
+    <url>
+         <loc>https://aws-samples.github.io/one-observability-demo/api/microservices/petfood-agents-runtime/classes/AgentRuntimeConstruct/</loc>
+         <lastmod>2026-08-19</lastmod>
+    </url>
+    <url>
+         <loc>https://aws-samples.github.io/one-observability-demo/api/microservices/petfood-agents-runtime/interfaces/AgentRuntimeProperties/</loc>
+         <lastmod>2026-08-19</lastmod>
+    </url>
+    <url>
+         <loc>https://aws-samples.github.io/one-observability-demo/api/microservices/petfood-nutrition-kb/</loc>
+         <lastmod>2026-08-19</lastmod>
+    </url>
+    <url>
+         <loc>https://aws-samples.github.io/one-observability-demo/api/microservices/petfood-nutrition-kb/classes/PetFoodNutritionKb/</loc>
+         <lastmod>2026-08-19</lastmod>
+    </url>
+    <url>
+         <loc>https://aws-samples.github.io/one-observability-demo/api/microservices/petfood-nutrition-kb/interfaces/PetFoodNutritionKbProperties/</loc>
          <lastmod>2026-08-19</lastmod>
     </url>
     <url>
