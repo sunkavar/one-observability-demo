@@ -6,6 +6,8 @@ from collections.abc import AsyncIterator, Callable
 
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
 
+from waggle_ai_agents.common.telemetry import user_context
+
 
 def _extract(payload: dict) -> tuple[str | None, str | None, str | None]:
     inner = payload.get("input") if isinstance(payload.get("input"), dict) else {}
@@ -33,7 +35,8 @@ def build_app(run: Callable[..., str]) -> BedrockAgentCoreApp:
         prompt, user_id, session_id = _extract(payload or {})
         if not prompt:
             return "Error: no 'prompt' provided in the request."
-        return run(prompt, user_id=user_id, session_id=session_id)
+        with user_context(user_id):
+            return run(prompt, user_id=user_id, session_id=session_id)
 
     return app
 
@@ -50,7 +53,14 @@ def build_streaming_app(
         if not prompt:
             yield "Error: no 'prompt' provided in the request."
             return
-        async for chunk in stream(prompt, user_id=user_id, session_id=session_id):
+        chunks = stream(prompt, user_id=user_id, session_id=session_id)
+        while True:
+            # Attach per chunk: context attached across a yield would leak into other requests.
+            with user_context(user_id):
+                try:
+                    chunk = await chunks.__anext__()
+                except StopAsyncIteration:
+                    return
             if chunk:
                 yield chunk
 
