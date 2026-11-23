@@ -12,7 +12,7 @@ SPDX-License-Identifier: Apache-2.0
  * **Microservices** (across 4 languages plus the AgentCore agents):
  * - `payforadoption-go` — Go service on ECS Fargate with OpenTelemetry Go SDK, Aurora correlation
  * - `petlistadoption-py` — Python/FastAPI on ECS Fargate with ADOT auto-instrumentation, Prometheus metrics
- * - `petsearch-java` — Java/Spring Boot on ECS Fargate with Application Signals, manual + auto instrumentation
+ * - `petsearch-java` — Java/Spring Boot on ECS Fargate, OTLP to the CloudWatch agent with profiles, manual + auto instrumentation
  * - `petsite-net` — .NET on EKS with CloudWatch agent, Application Signals
  * - `petfood-rs` — Rust/Axum on ECS Fargate with OpenTelemetry Rust SDK, custom Prometheus metrics
  * - `waggle-ai-*` — multi-framework AI agents on Bedrock AgentCore (orchestrator + sub-agents)
@@ -396,13 +396,21 @@ export class MicroservicesStack extends Stack {
                         containerPort: 8080,
                         createLoadBalancer: true,
                         cloudMapNamespace: imports.cloudMap,
-                        enableCloudWatchAgent: false,
+                        enableCloudWatchAgent: true,
+                        cloudWatchAgentTraceMode: CloudWatchAgentTraceMode.OTLP,
                         table: imports.dynamodbExports.table,
                         bucket: imports.assetsBucket,
                         additionalEnvironment: {
                             OTEL_SERVICE_NAME: 'petsearch-api-java',
                             OTEL_RESOURCE_ATTRIBUTES:
                                 'service.name=petsearch-api-java,service.namespace=petadoptions,deployment.environment=ecs:PetsiteECS-cluster',
+                            OTEL_EXPORTER_OTLP_PROTOCOL: 'http/protobuf',
+                            OTEL_EXPORTER_OTLP_ENDPOINT: 'http://localhost:4318',
+                            OTEL_AWS_PROFILER_ENABLED: 'true',
+                            OTEL_AWS_PROFILER_ENDPOINT: 'http://localhost:4318/v1development/profiles',
+                            // wall mode exceeds CloudWatch's 16,000-samples-per-profile limit on a busy JVM.
+                            OTEL_AWS_PROFILER_MODE: 'cpu',
+                            OTEL_AWS_PROFILER_MEMORY_ENABLED: 'true',
                         },
                         enableSLO: CUSTOM_ENABLE_SLO,
                     });

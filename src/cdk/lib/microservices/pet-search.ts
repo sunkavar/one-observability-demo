@@ -11,8 +11,8 @@ SPDX-License-Identifier: Apache-2.0
  * - **ECS Fargate** with CloudWatch agent sidecar and FireLens log routing
  * - **DynamoDB** access for pet catalog search with scan filters
  * - **S3** access for pet image URL resolution
- * - **Application Signals** integration via `@aws-cdk/aws-applicationsignals-alpha`
- * - **Java auto-instrumentation** with configurable instrumentation version
+ * - **CloudWatch agent sidecar in OTLP mode**, including the profiles pipeline
+ * - **ADOT Java auto-instrumentation** with the continuous profiler enabled
  *
  * Two instrumentation variants exist in the source code:
  * - `petsearch-java/` — Auto-instrumented via ADOT Java agent
@@ -34,7 +34,6 @@ import { SSM_PARAMETER_NAMES } from '../../bin/constants';
 import { NagSuppressions } from 'cdk-nag';
 import { Utilities } from '../utils/utilities';
 import { ITable } from 'aws-cdk-lib/aws-dynamodb';
-import { ApplicationSignalsIntegration, JavaInstrumentationVersion } from '@aws-cdk/aws-applicationsignals-alpha';
 import { IBucket } from 'aws-cdk-lib/aws-s3';
 import { Stack } from 'aws-cdk-lib';
 import { CfnServiceLevelObjective } from 'aws-cdk-lib/aws-applicationsignals';
@@ -81,20 +80,6 @@ export class PetSearchService extends EcsService {
             'app:name': properties.name,
             'app:computType': properties.computeType,
             'app:hostType:': properties.hostType,
-        });
-
-        new ApplicationSignalsIntegration(this, 'petsearch-integration', {
-            taskDefinition: this.taskDefinition,
-            instrumentation: {
-                sdkVersion: JavaInstrumentationVersion.V2_10_0,
-            },
-            serviceName: 'petsearch-api-java',
-            cloudWatchAgentSidecar: {
-                containerName: 'ecs-cwagent',
-                enableLogging: true,
-                cpu: 256,
-                memoryLimitMiB: 512,
-            },
         });
 
         if (properties.enableSLO) {

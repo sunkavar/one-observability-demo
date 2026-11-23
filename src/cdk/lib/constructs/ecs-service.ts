@@ -598,7 +598,7 @@ export abstract class EcsService extends Microservice {
         // Language to ADOT image version mapping
         const languageConfig: { [key: string]: { image: string; volumeName: string; volumePath: string } } = {
             java: {
-                image: 'public.ecr.aws/aws-observability/adot-autoinstrumentation-java:v2.11.5',
+                image: 'public.ecr.aws/aws-observability/adot-autoinstrumentation-java:v2.33.0',
                 volumeName: 'opentelemetry-auto-instrumentation-java',
                 volumePath: '/otel-auto-instrumentation-java',
             },
@@ -670,6 +670,10 @@ export abstract class EcsService extends Microservice {
             containerPath: config.volumePath,
             readOnly: false,
         });
+
+        if (language === 'java') {
+            mainContainer.addEnvironment('JAVA_TOOL_OPTIONS', `-javaagent:${config.volumePath}/javaagent.jar`);
+        }
 
         // Add container dependency
         mainContainer.addContainerDependencies({
@@ -778,6 +782,8 @@ export abstract class EcsService extends Microservice {
                     'logs:DescribeLogGroups',
                     'xray:PutTraceSegments',
                     'xray:PutTelemetryRecords',
+                    // Not in CloudWatchAgentServerPolicy; the OTLP profiles pipeline needs it.
+                    'cloudwatch:PutProfileRecords',
                 ],
                 resources: ['*'],
             }),
