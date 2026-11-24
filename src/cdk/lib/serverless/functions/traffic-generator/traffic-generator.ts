@@ -111,7 +111,8 @@ export class TrafficGeneratorFunction extends WokshopLambdaFunction {
         return {
             PETSITE_URL_PARAMETER_NAME: `${PARAMETER_STORE_PREFIX}/${SSM_PARAMETER_NAMES.PETSITE_URL}`,
             CONCURRENT_USERS: `${CONCURRENT_USERS}`,
-            OTEL_NODE_DISABLED_INSTRUMENTATIONS: 'none',
+            // The function names its own HTTP client spans; fs and dns stay off as in the layer default.
+            OTEL_NODE_DISABLED_INSTRUMENTATIONS: 'fs,dns,http,net',
             OTEL_AWS_APPLICATION_SIGNALS_ENABLED: 'true',
             OTEL_METRICS_EXPORTER: 'none',
             OTEL_LOGS_EXPORTER: 'none',
@@ -125,7 +126,7 @@ export class TrafficGeneratorFunction extends WokshopLambdaFunction {
     getBundling(): BundlingOptions {
         return {
             externalModules: [],
-            nodeModules: ['@aws-sdk/client-ssm'],
+            nodeModules: ['@aws-sdk/client-ssm', '@opentelemetry/api'],
         };
     }
 

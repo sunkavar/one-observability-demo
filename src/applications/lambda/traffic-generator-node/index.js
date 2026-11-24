@@ -5,6 +5,10 @@ SPDX-License-Identifier: Apache-2.0
 
 const { SSMClient, GetParameterCommand } = require('@aws-sdk/client-ssm');
 const https = require('node:https');
+const { context, propagation, trace, SpanKind, SpanStatusCode } = require('@opentelemetry/api');
+
+// The layer's http instrumentation names client spans by method only, so it is disabled and spans are created here.
+const tracer = trace.getTracer('traffic-generator-node');
 
 const ssmClient = new SSMClient({});
 
@@ -127,10 +131,10 @@ async function simulateUserJourney(petsiteBaseUrl) {
     let failedRequests = 0;
 
     // Helper function to make request and track results
-    const makeTrackedRequest = async (url, method, description, data, contentType = 'json') => {
+    const makeTrackedRequest = async (route, url, method, description, data, contentType = 'json') => {
         try {
             console.log(`Making ${method} request to ${url} for ${userId}...`);
-            const result = await makeHttpRequest(url, method, description, data, contentType);
+            const result = await makeHttpRequest(url, method, description, data, contentType, 0, route);
             requests.push({ url, method, statusCode: result.statusCode, duration: result.duration });
             return result;
         } catch (error) {
@@ -148,7 +152,7 @@ async function simulateUserJourney(petsiteBaseUrl) {
         // 1. Homepage request - establish session (include userId to avoid redirect)
         try {
             const homepageUrl = `${petsiteBaseUrl}/pets?userId=${userId}`;
-            await makeTrackedRequest(homepageUrl, 'GET', `Homepage for ${userId}`);
+            await makeTrackedRequest('/pets', homepageUrl, 'GET', `Homepage for ${userId}`);
         } catch {
             // Error already handled by makeTrackedRequest
         }
@@ -156,7 +160,7 @@ async function simulateUserJourney(petsiteBaseUrl) {
         // 2. Pet selection page with parameters
         try {
             const petSelectionUrl = `${petsiteBaseUrl}/pets?pet_type=${petType}&pet_color=${petColor}&userId=${userId}`;
-            await makeTrackedRequest(petSelectionUrl, 'GET', `Pet Selection for ${userId}`);
+            await makeTrackedRequest('/pets', petSelectionUrl, 'GET', `Pet Selection for ${userId}`);
         } catch {
             // Error already handled by makeTrackedRequest
         }
@@ -164,7 +168,7 @@ async function simulateUserJourney(petsiteBaseUrl) {
         // 3. Pet adoption page
         try {
             const adoptionUrl = `${petsiteBaseUrl}/pets/${petId}?userId=${userId}`;
-            await makeTrackedRequest(adoptionUrl, 'GET', `Pet Adoption for ${userId}`);
+            await makeTrackedRequest('/pets/{pet_id}', adoptionUrl, 'GET', `Pet Adoption for ${userId}`);
         } catch {
             // Error already handled by makeTrackedRequest
         }
@@ -172,7 +176,7 @@ async function simulateUserJourney(petsiteBaseUrl) {
         // 4. Payment page for pet adoption
         try {
             const paymentUrl = `${petsiteBaseUrl}/adoptions/${petId}/confirmation?userId=${userId}&status=success&pet_type=${petType}`;
-            await makeTrackedRequest(paymentUrl, 'GET', `Payment for ${userId}`);
+            await makeTrackedRequest('/adoptions/{pet_id}/confirmation', paymentUrl, 'GET', `Payment for ${userId}`);
         } catch {
             // Error already handled by makeTrackedRequest
         }
@@ -180,7 +184,7 @@ async function simulateUserJourney(petsiteBaseUrl) {
         // 5. Food service page - browse food for the adopted pet
         try {
             const foodServiceUrl = `${petsiteBaseUrl}/foods?userId=${userId}&pet_type=${petType}`;
-            await makeTrackedRequest(foodServiceUrl, 'GET', `Food Service for ${userId}`);
+            await makeTrackedRequest('/foods', foodServiceUrl, 'GET', `Food Service for ${userId}`);
         } catch {
             // Error already handled by makeTrackedRequest
         }
@@ -189,7 +193,14 @@ async function simulateUserJourney(petsiteBaseUrl) {
         try {
             const addToCartUrl = `${petsiteBaseUrl}/cart/items`;
             const addToCartData = `food_id=${encodeURIComponent(randomFoodId)}&userId=${encodeURIComponent(userId)}`;
-            await makeTrackedRequest(addToCartUrl, 'POST', `Add To Cart for ${userId}`, addToCartData, 'form');
+            await makeTrackedRequest(
+                '/cart/items',
+                addToCartUrl,
+                'POST',
+                `Add To Cart for ${userId}`,
+                addToCartData,
+                'form',
+            );
         } catch {
             // Error already handled by makeTrackedRequest
         }
@@ -197,7 +208,7 @@ async function simulateUserJourney(petsiteBaseUrl) {
         // 7. Check cart count
         try {
             const cartCountUrl = `${petsiteBaseUrl}/cart/count?userId=${userId}`;
-            await makeTrackedRequest(cartCountUrl, 'GET', `Get Cart Count for ${userId}`);
+            await makeTrackedRequest('/cart/count', cartCountUrl, 'GET', `Get Cart Count for ${userId}`);
         } catch {
             // Error already handled by makeTrackedRequest
         }
@@ -205,7 +216,7 @@ async function simulateUserJourney(petsiteBaseUrl) {
         // 8. Remove some items from cart (simulate changing mind)
         try {
             const removeItemUrl = `${petsiteBaseUrl}/cart/items/${encodeURIComponent(randomFoodId)}?userId=${encodeURIComponent(userId)}`;
-            await makeTrackedRequest(removeItemUrl, 'DELETE', `Remove Item for ${userId}`);
+            await makeTrackedRequest('/cart/items/{food_id}', removeItemUrl, 'DELETE', `Remove Item for ${userId}`);
         } catch {
             // Error already handled by makeTrackedRequest
         }
@@ -215,6 +226,7 @@ async function simulateUserJourney(petsiteBaseUrl) {
             const addToCartUrl2 = `${petsiteBaseUrl}/cart/items`;
             const addToCartData2 = `food_id=${encodeURIComponent(randomFoodId)}&userId=${encodeURIComponent(userId)}`;
             await makeTrackedRequest(
+                '/cart/items',
                 addToCartUrl2,
                 'POST',
                 `Add To Cart (2nd time) for ${userId}`,
@@ -229,7 +241,14 @@ async function simulateUserJourney(petsiteBaseUrl) {
         try {
             const clearCartUrl = `${petsiteBaseUrl}/cart/clear`;
             const clearCartData = `userId=${encodeURIComponent(userId)}`;
-            await makeTrackedRequest(clearCartUrl, 'POST', `Clear Cart for ${userId}`, clearCartData, 'form');
+            await makeTrackedRequest(
+                '/cart/clear',
+                clearCartUrl,
+                'POST',
+                `Clear Cart for ${userId}`,
+                clearCartData,
+                'form',
+            );
         } catch {
             // Error already handled by makeTrackedRequest
         }
@@ -238,7 +257,14 @@ async function simulateUserJourney(petsiteBaseUrl) {
         try {
             const addToCartUrl3 = `${petsiteBaseUrl}/cart/items`;
             const addToCartData3 = `food_id=${encodeURIComponent(randomFoodId)}&userId=${encodeURIComponent(userId)}`;
-            await makeTrackedRequest(addToCartUrl3, 'POST', `Reorder Items for ${userId}`, addToCartData3, 'form');
+            await makeTrackedRequest(
+                '/cart/items',
+                addToCartUrl3,
+                'POST',
+                `Reorder Items for ${userId}`,
+                addToCartData3,
+                'form',
+            );
         } catch {
             // Error already handled by makeTrackedRequest
         }
@@ -246,7 +272,7 @@ async function simulateUserJourney(petsiteBaseUrl) {
         // 12. Checkout page - review items
         try {
             const checkoutUrl = `${petsiteBaseUrl}/cart?userId=${userId}`;
-            await makeTrackedRequest(checkoutUrl, 'GET', `Checkout for ${userId}`);
+            await makeTrackedRequest('/cart', checkoutUrl, 'GET', `Checkout for ${userId}`);
         } catch {
             // Error already handled by makeTrackedRequest
         }
@@ -282,7 +308,13 @@ async function simulateUserJourney(petsiteBaseUrl) {
                 },
                 userId: userId,
             });
-            await makeTrackedRequest(payAndCheckoutUrl, 'POST', `Pay and Checkout for ${userId}`, payAndCheckoutData);
+            await makeTrackedRequest(
+                '/cart/checkout',
+                payAndCheckoutUrl,
+                'POST',
+                `Pay and Checkout for ${userId}`,
+                payAndCheckoutData,
+            );
         } catch {
             // Error already handled by makeTrackedRequest
         }
@@ -309,9 +341,18 @@ async function simulateUserJourney(petsiteBaseUrl) {
  * @param {string} data - Request body data (for POST requests)
  * @param {string} contentType - Content type: 'json' or 'form' (default: 'json')
  * @param {number} redirectCount - Internal counter for redirect following (max 5)
+ * @param {string} route - PetSite route template used as the span name; redirects fall back to the URL path
  * @returns {Promise<{statusCode: number, description: string, data: string}>}
  */
-function makeHttpRequest(url, method = 'GET', description = 'Request', data, contentType = 'json', redirectCount = 0) {
+function makeHttpRequest(
+    url,
+    method = 'GET',
+    description = 'Request',
+    data,
+    contentType = 'json',
+    redirectCount = 0,
+    route = undefined,
+) {
     return new Promise((resolve, reject) => {
         const startTime = Date.now();
         const maxRedirects = 5;
@@ -320,6 +361,32 @@ function makeHttpRequest(url, method = 'GET', description = 'Request', data, con
             reject(new Error(`${description} exceeded maximum redirect limit (${maxRedirects})`));
             return;
         }
+
+        const target = new URL(url);
+        const span = tracer.startSpan(`${method} ${route ?? target.pathname}`, {
+            kind: SpanKind.CLIENT,
+            attributes: {
+                'http.method': method,
+                'http.url': url,
+                'http.target': `${target.pathname}${target.search}`,
+                'net.peer.name': target.hostname,
+                'net.peer.port': Number(target.port || 443),
+                ...(route && { 'url.template': route }),
+            },
+        });
+        let spanEnded = false;
+        const endSpan = (statusCode, error) => {
+            if (spanEnded) return;
+            spanEnded = true;
+            if (statusCode) span.setAttribute('http.status_code', statusCode);
+            if (error) {
+                span.recordException(error);
+                span.setStatus({ code: SpanStatusCode.ERROR, message: error.message });
+            } else if (statusCode >= 400) {
+                span.setStatus({ code: SpanStatusCode.ERROR });
+            }
+            span.end();
+        };
 
         const headers = {
             'User-Agent': 'CloudWatchSynthetics/TrafficGenerator',
@@ -341,6 +408,7 @@ function makeHttpRequest(url, method = 'GET', description = 'Request', data, con
             headers: headers,
             timeout: 60_000, // Increased to 60 seconds timeout for slow AddToCart
         };
+        propagation.inject(trace.setSpan(context.active(), span), headers);
 
         const request = https.request(url, options, (response) => {
             let responseData = '';
@@ -350,6 +418,7 @@ function makeHttpRequest(url, method = 'GET', description = 'Request', data, con
             response.on('end', () => {
                 const endTime = Date.now();
                 const duration = endTime - startTime;
+                endSpan(response.statusCode);
 
                 // Handle redirects (301, 302, 303, 307, 308)
                 if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
@@ -397,6 +466,7 @@ function makeHttpRequest(url, method = 'GET', description = 'Request', data, con
             const endTime = Date.now();
             const duration = endTime - startTime;
             console.error('Request failed:', { description, durationMs: duration, error: error.message });
+            endSpan(undefined, error);
             reject(error);
         });
 
@@ -404,8 +474,10 @@ function makeHttpRequest(url, method = 'GET', description = 'Request', data, con
             const endTime = Date.now();
             const duration = endTime - startTime;
             console.error('Request timeout:', { description, durationMs: duration, timeoutLimit: '60 seconds' });
+            const timeoutError = new Error(`${description} timeout after ${duration}ms`);
+            endSpan(undefined, timeoutError);
             request.destroy();
-            reject(new Error(`${description} timeout after ${duration}ms`));
+            reject(timeoutError);
         });
 
         // Write data for POST requests
