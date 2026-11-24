@@ -23,6 +23,7 @@ namespace PetSite
             // Configure Activity source for custom spans
             Activity.DefaultIdFormat = ActivityIdFormat.W3C;
             Activity.ForceDefaultIdFormat = true;
+            PetSite.Helpers.UserIdPropagation.Start();
 
             CreateHostBuilder(args).Build().Run();
         }
