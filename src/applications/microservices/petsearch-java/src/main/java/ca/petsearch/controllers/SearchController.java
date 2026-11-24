@@ -246,6 +246,8 @@ public class SearchController {
 
         // Resolve userId parameter (primary takes precedence over alias)
         String resolvedUserId = !SearchQuery.isEmptyParameter(userId) ? userId : userIdAlias;
+        // The server span from the agent, so searches by user.id match the service's entry span.
+        Span.current().setAttribute("user.id", resolvedUserId);
 
         // Log all input parameters for comprehensive tracing
         logger.info("Search request received - userId: '{}', petType: '{}', petTypeAlias: '{}', petColor: '{}', petColorAlias: '{}', petId: '{}', petIdAlias: '{}', userIdAlias: '{}'",

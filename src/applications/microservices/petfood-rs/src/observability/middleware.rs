@@ -113,6 +113,9 @@ pub async fn observability_middleware(
         otel_span.set_attribute(KeyValue::new("http.response.status_code", status_code as i64));
         otel_span.set_attribute(KeyValue::new("http.response_code", status_code as i64));
         otel_span.set_attribute(KeyValue::new("response_code", status_code as i64));
+        if let Some(user_id) = path_param(&endpoint, &uri, ":user_id") {
+            otel_span.set_attribute(KeyValue::new("user.id", user_id));
+        }
 
         // Set span status for OpenTelemetry compatibility
         // Note: X-Ray determines error/fault flags based on HTTP status code, not span status
@@ -367,6 +370,17 @@ impl BusinessTracingMiddleware {
     }
 }
 
+/// Value of a `:name` segment of a route template, taken from the request path.
+fn path_param(template: &str, uri: &str, name: &str) -> Option<String> {
+    let path = uri.split('?').next().unwrap_or(uri);
+    template
+        .split('/')
+        .zip(path.split('/'))
+        .find(|(segment, _)| *segment == name)
+        .map(|(_, value)| value.to_string())
+        .filter(|value| !value.is_empty())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -506,5 +520,16 @@ mod tests {
             .await;
 
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn path_param_reads_user_id_from_matched_route() {
+        let template = "/api/cart/:user_id/items";
+        assert_eq!(
+            path_param(template, "/api/cart/user1510/items?x=1", ":user_id"),
+            Some("user1510".to_string())
+        );
+        assert_eq!(path_param("/api/foods", "/api/foods", ":user_id"), None);
+        assert_eq!(path_param(template, "/api/cart//items", ":user_id"), None);
     }
 }
