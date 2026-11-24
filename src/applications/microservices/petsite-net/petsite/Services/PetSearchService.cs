@@ -106,6 +106,7 @@ namespace PetSite.Services
             }
             catch (Exception ex)
             {
+                SpanExceptions.Record(ex);
                 _logger.LogError(ex, "Exception occurred while fetching pet details.");
                 throw;
             }

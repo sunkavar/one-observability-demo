@@ -39,6 +39,7 @@ namespace PetSite.Controllers
             }
             catch (Exception ex)
             {
+                SpanExceptions.Record(ex);
                 _logger.LogError(ex, $"Error fetching cart data for user: {userId}");
                 ViewBag.ErrorMessage = $"Unable to load cart data at this time. Please try again later.\nError message: {ex.Message}";
                 return View("Error", new PetSite.Models.ErrorViewModel { RequestId = System.Diagnostics.Activity.Current?.Id ?? HttpContext.TraceIdentifier });
@@ -78,10 +79,15 @@ namespace PetSite.Controllers
                     });
                 }
 
-                return BadRequest($"Payment failed for user: {userId}. Failure reason:{response.ReasonPhrase}");
+                var failure = await response.Content.ReadAsStringAsync();
+                throw new HttpRequestException(
+                    $"Checkout failed for user {userId}: petfood returned {(int)response.StatusCode} {failure}",
+                    null,
+                    response.StatusCode);
             }
             catch (Exception ex)
             {
+                SpanExceptions.Record(ex);
                 _logger.LogError(ex, $"Payment failed for user: {userId}");
                 return BadRequest($"Payment processing failed. Please try again.\nError: {ex.Message}");
             }
@@ -97,6 +103,7 @@ namespace PetSite.Controllers
             }
             catch (Exception ex)
             {
+                SpanExceptions.Record(ex);
                 _logger.LogError(ex, $"Failed to clear cart for user: {userId}");
                 ViewBag.ErrorMessage = $"Unable to clear cart. Please try again later.\nError: {ex.Message}";
                 return RedirectToAction("Index", new { userId });
@@ -120,6 +127,7 @@ namespace PetSite.Controllers
             }
             catch (Exception ex)
             {
+                SpanExceptions.Record(ex);
                 _logger.LogError(ex, "Failed to remove item from cart");
                 return BadRequest($"Failed to remove item from cart. Error: {ex.Message}");
             }

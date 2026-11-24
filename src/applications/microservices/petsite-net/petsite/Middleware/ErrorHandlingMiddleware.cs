@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
+using PetSite.Helpers;
 
 namespace PetSite.Middleware
 {
@@ -24,6 +25,7 @@ namespace PetSite.Middleware
             }
             catch (Exception ex)
             {
+                SpanExceptions.Record(ex);
                 _logger.LogError(ex, "An unhandled exception occurred");
 
                 // Preserve userId and exception message

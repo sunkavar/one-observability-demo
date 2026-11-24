@@ -60,6 +60,7 @@ namespace PetSite.Controllers
                 }
                 catch (Exception ex)
                 {
+                    SpanExceptions.Record(ex);
                     _logger.LogError(ex, "Error fetching pet details after payment.");
                     ViewBag.ErrorMessage = $"Unable to load payment details at this time. Please try again later.\nError message: {ex.Message}";
                     return View("Error", new PetSite.Models.ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
@@ -107,6 +108,7 @@ namespace PetSite.Controllers
             }
             catch (Exception ex)
             {
+                SpanExceptions.Record(ex);
                 _logger.LogError(ex, $"Error in MakePayment: {ex.Message} - for user: {userId}");
 
                 return RedirectToAction("Index", new { pet_id = petId, userId = userId, status = ex.Message });

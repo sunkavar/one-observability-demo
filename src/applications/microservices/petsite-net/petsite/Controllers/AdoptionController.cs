@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using PetSite.Helpers;
 
 using PetSite.ViewModels;
 
@@ -52,6 +53,7 @@ namespace PetSite.Controllers
             }
             catch (Exception e)
             {
+                SpanExceptions.Record(e);
                 _logger.LogError(e, $"Error fetching pet details for pet_id: {petId}, user: {userId}");
                 pet = new Pet();
                 ViewBag.ErrorMessage = "Unable to load pet details. Please try again.";
@@ -94,6 +96,7 @@ namespace PetSite.Controllers
             }
             catch (Exception e)
             {
+                SpanExceptions.Record(e);
                 _logger.LogError(e, $"Error calling PetSearch API for user: {userId}");
                 ViewBag.ErrorMessage = $"Unable to process adoption request at this time. Please try again later.\nError message: {e.Message}";
                 return View("Error", new PetSite.Models.ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });

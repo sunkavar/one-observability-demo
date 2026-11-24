@@ -10,6 +10,7 @@ using Amazon.BedrockAgentCore.Model;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Http.Timeouts;
+using PetSite.Helpers;
 
 namespace PetSite.Controllers
 {
@@ -65,6 +66,7 @@ namespace PetSite.Controllers
             }
             catch (System.Exception ex)
             {
+                SpanExceptions.Record(ex);
                 _logger.LogError(ex, "Failed to resolve agent runtime ARN");
                 agentRuntimeArn = null;
             }
@@ -136,11 +138,13 @@ namespace PetSite.Controllers
             }
             catch (Amazon.BedrockAgentCore.Model.ServiceException ex)
             {
+                SpanExceptions.Record(ex);
                 _logger.LogWarning(ex, "Bedrock service error");
                 await SafeAppendAsync("The service is currently busy. Please wait a moment and try again.");
             }
             catch (System.Exception ex)
             {
+                SpanExceptions.Record(ex);
                 _logger.LogError(ex, $"Error streaming Bedrock agent for user: {request.UserId}");
                 await SafeAppendAsync("\n\n[Sorry, the connection was interrupted. Please try again.]");
             }

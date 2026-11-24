@@ -56,6 +56,7 @@ namespace PetSite.Controllers
             }
             catch (Exception ex)
             {
+                SpanExceptions.Record(ex);
                 _logger.LogError(ex, "Error fetching food data from FoodService API");
                 ViewBag.ErrorMessage = $"Unable to load food items at this time. Please try again later.\nError message: {ex.Message}";
                 return View("Error", new PetSite.Models.ErrorViewModel { RequestId = System.Diagnostics.Activity.Current?.Id ?? HttpContext.TraceIdentifier });
@@ -94,6 +95,7 @@ namespace PetSite.Controllers
             }
             catch (Exception ex)
             {
+                SpanExceptions.Record(ex);
                 _logger.LogError(ex, "Error adding item to cart");
                 return BadRequest(ex.Message);
             }
@@ -130,6 +132,7 @@ namespace PetSite.Controllers
             }
             catch (Exception ex)
             {
+                SpanExceptions.Record(ex);
                 _logger.LogError(ex, "Error fetching cart count");
                 return 0;
             }

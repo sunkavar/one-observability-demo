@@ -70,6 +70,7 @@ namespace PetSite.Controllers
             }
             catch (Exception e)
             {
+                SpanExceptions.Record(e);
                 _logger.LogError(e, $"Error calling PetListAdoptions API for user {ViewBag.UserId?.ToString()}: {e.Message}");
                 ViewBag.ErrorMessage = $"Unable to load adoption list at this time. Please try again later.\nError message: {e.Message}";
                 return View("Error", new PetSite.Models.ErrorViewModel { RequestId = System.Diagnostics.Activity.Current?.Id ?? HttpContext.TraceIdentifier });
