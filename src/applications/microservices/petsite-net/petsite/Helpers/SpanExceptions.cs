@@ -22,7 +22,7 @@ namespace PetSite.Helpers
                 return;
             }
             exception.Data[RecordedKey] = true;
-            span.SetStatus(ActivityStatusCode.Error, exception.Message);
+            // Status stays with the HTTP instrumentation, so a handled downstream 4xx doesn't fault a 200 page.
             span.AddEvent(new ActivityEvent("exception", tags: new ActivityTagsCollection
             {
                 { "exception.type", exception.GetType().FullName },
