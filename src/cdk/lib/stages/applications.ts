@@ -95,6 +95,7 @@ import { CfnWebACLAssociation } from 'aws-cdk-lib/aws-wafv2';
 import { DynamoDBWriteTestConstruct } from '../serverless/functions/dynamo-capacity/dynamo-database-write-test-construct';
 import { ManagedPrometheusCollector } from '../constructs/managed-prometheus-collector';
 import { ProfilesFaultSchedule } from '../constructs/profiles-fault-schedule';
+import { ApplicationLoadBalancedFargateService } from 'aws-cdk-lib/aws-ecs-patterns';
 
 /** Defines where and how a microservice is deployed (host type, compute type, architecture). */
 export interface MicroserviceApplicationPlacement {
@@ -418,8 +419,13 @@ export class MicroservicesStack extends Stack {
                         },
                         enableSLO: CUSTOM_ENABLE_SLO,
                     });
-                    const petSearchService = svc.service;
-                    if (ENABLE_PROFILES_FAULT_SCHEDULE && petSearchService) {
+                    if (ENABLE_PROFILES_FAULT_SCHEDULE && !service.disableService) {
+                        const petSearchService =
+                            (svc.loadBalancedService as ApplicationLoadBalancedFargateService | undefined)?.service ??
+                            svc.service;
+                        if (!petSearchService) {
+                            throw new Error('ENABLE_PROFILES_FAULT_SCHEDULE needs the petsearch ECS service');
+                        }
                         new ProfilesFaultSchedule(this, 'PetSearchProfilesFault', {
                             cluster: imports.ecsExports.cluster,
                             serviceName: petSearchService.serviceName,
