@@ -1,3 +1,4 @@
+pub mod exceptions;
 pub mod metrics;
 pub mod middleware;
 pub mod tracing;

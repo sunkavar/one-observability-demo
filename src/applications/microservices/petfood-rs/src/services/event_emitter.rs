@@ -297,10 +297,14 @@ impl EventEmitter {
                     );
                 }
                 Err(e) => {
+                    // Display on SdkError is only "service error"; the context form carries the AWS error code.
+                    let detail =
+                        aws_smithy_types::error::display::DisplayErrorContext(e).to_string();
                     tracing::Span::current().record("http.status_code", 400); // Generic error code
                     tracing::Span::current().record("error", true);
-                    tracing::Span::current().record("error.message", e.to_string().as_str());
-                    error!("EventBridge PutEvents failed: {}", e);
+                    tracing::Span::current().record("error.message", detail.as_str());
+                    crate::observability::exceptions::record_exception(e, &detail);
+                    error!("EventBridge PutEvents failed: {}", detail);
                 }
             }
 

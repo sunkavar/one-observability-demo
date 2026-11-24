@@ -497,6 +497,8 @@ fn query_to_filters(query: ListFoodsQuery) -> Result<FoodFilters, String> {
 
 /// Convert ServiceError to HTTP response
 fn service_error_to_response(err: ServiceError) -> (StatusCode, Json<Value>) {
+    // Handlers have no span of their own, so this lands on the HTTP server span.
+    crate::observability::exceptions::record_exception(&err, &err.to_string());
     let (status, message) = match err {
         ServiceError::FoodNotFound { .. } => (StatusCode::NOT_FOUND, err.to_string()),
         ServiceError::CartNotFound { .. } => (StatusCode::NOT_FOUND, err.to_string()),
