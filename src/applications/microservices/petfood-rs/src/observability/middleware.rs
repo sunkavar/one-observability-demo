@@ -3,7 +3,7 @@ use axum::{
     middleware::Next,
     response::Response,
 };
-use opentelemetry::{trace::TraceContextExt, KeyValue};
+use opentelemetry::{global, propagation::Extractor, trace::TraceContextExt, KeyValue};
 use std::{sync::Arc, time::Instant};
 use tracing::{error, info, Instrument};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
@@ -74,7 +74,16 @@ pub async fn observability_middleware(
         http.user_agent = %user_agent,
         http.client_ip = %client_ip,
         client.address = %client_ip,
+        user.id = tracing::field::Empty,
     );
+    if let Some(user_id) = path_param(&endpoint, &uri, "{user_id}") {
+        span.record("user.id", user_id.as_str());
+    }
+    // Must run before the span is entered, or the span starts as a new trace.
+    let parent = global::get_text_map_propagator(|propagator| {
+        propagator.extract(&HeaderExtractor(request.headers()))
+    });
+    let _ = span.set_parent(parent);
 
     // Execute the rest of the middleware within this span
     async {
@@ -120,9 +129,6 @@ pub async fn observability_middleware(
         otel_span.set_attribute(KeyValue::new("http.response.status_code", status_code as i64));
         otel_span.set_attribute(KeyValue::new("http.response_code", status_code as i64));
         otel_span.set_attribute(KeyValue::new("response_code", status_code as i64));
-        if let Some(user_id) = path_param(&endpoint, &uri, "{user_id}") {
-            otel_span.set_attribute(KeyValue::new("user.id", user_id));
-        }
 
         // Set span status for OpenTelemetry compatibility
         // Note: X-Ray determines error/fault flags based on HTTP status code, not span status
@@ -367,6 +373,18 @@ impl BusinessTracingMiddleware {
     }
 }
 
+struct HeaderExtractor<'a>(&'a axum::http::HeaderMap);
+
+impl Extractor for HeaderExtractor<'_> {
+    fn get(&self, key: &str) -> Option<&str> {
+        self.0.get(key).and_then(|value| value.to_str().ok())
+    }
+
+    fn keys(&self) -> Vec<&str> {
+        self.0.keys().map(|key| key.as_str()).collect()
+    }
+}
+
 /// Value of a `{name}` segment of a route template, taken from the request path.
 fn path_param(template: &str, uri: &str, name: &str) -> Option<String> {
     let path = uri.split('?').next().unwrap_or(uri);
@@ -549,6 +567,57 @@ mod tests {
             path_param(template, "/carts/user1", "{user_id}"),
             Some("user1".to_string())
         );
+    }
+
+    #[tokio::test]
+    async fn server_span_joins_the_caller_trace_and_carries_user_id() {
+        use opentelemetry::trace::TracerProvider as _;
+        use opentelemetry_sdk::{
+            propagation::TraceContextPropagator,
+            trace::{InMemorySpanExporter, SdkTracerProvider},
+        };
+        use tracing_subscriber::layer::SubscriberExt;
+
+        let exporter = InMemorySpanExporter::default();
+        let provider = SdkTracerProvider::builder()
+            .with_simple_exporter(exporter.clone())
+            .build();
+        global::set_text_map_propagator(TraceContextPropagator::new());
+        let subscriber = tracing_subscriber::registry()
+            .with(tracing_opentelemetry::layer().with_tracer(provider.tracer("test")));
+        let _guard = tracing::subscriber::set_default(subscriber);
+
+        let metrics = Arc::new(Metrics::new().unwrap());
+        let app = Router::new()
+            .route("/carts/{user_id}", get(test_handler))
+            .layer(middleware::from_fn(move |req, next| {
+                observability_middleware(metrics.clone(), req, next)
+            }));
+        let request = Request::builder()
+            .uri("/carts/user7")
+            .header(
+                "traceparent",
+                "00-6b05c4f8301d945a6462d16811fd05f1-b38e14a6dfc407d3-01",
+            )
+            .body(Body::empty())
+            .unwrap();
+        assert_eq!(app.oneshot(request).await.unwrap().status(), StatusCode::OK);
+        provider.force_flush().unwrap();
+
+        let spans = exporter.get_finished_spans().unwrap();
+        let server = spans
+            .iter()
+            .find(|span| span.name == "GET /carts/{user_id}")
+            .expect("server span exported");
+        assert_eq!(
+            server.span_context.trace_id().to_string(),
+            "6b05c4f8301d945a6462d16811fd05f1"
+        );
+        assert_eq!(server.parent_span_id.to_string(), "b38e14a6dfc407d3");
+        assert!(server
+            .attributes
+            .iter()
+            .any(|kv| kv.key.as_str() == "user.id" && kv.value.as_str() == "user7"));
     }
 
     #[tokio::test]

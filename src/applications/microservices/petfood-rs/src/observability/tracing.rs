@@ -2,6 +2,7 @@ use opentelemetry::{global, trace::TracerProvider as _, KeyValue};
 use opentelemetry_otlp::WithExportConfig;
 use opentelemetry_sdk::{
     metrics::{SdkMeterProvider, Temporality},
+    propagation::TraceContextPropagator,
     trace::{
         BatchConfigBuilder, BatchSpanProcessor, RandomIdGenerator, Sampler, SdkTracerProvider,
     },
@@ -59,6 +60,7 @@ pub fn init_observability(
     // so other parts of the SDK can find it.
     let _ = TRACER_PROVIDER.set(tracer_provider.clone());
     global::set_tracer_provider(tracer_provider);
+    global::set_text_map_propagator(TraceContextPropagator::new());
 
     // Initialize OpenTelemetry metrics pipeline (OTLP export)
     init_opentelemetry_metrics(resource, otlp_endpoint)?;
@@ -272,10 +274,12 @@ fn init_opentelemetry_tracer(
     // Build tracer provider with batch exporter and configuration
     let tracer_provider = SdkTracerProvider::builder()
         .with_span_processor(processor)
-        .with_sampler(Sampler::AlwaysOn)
+        // Follow the caller's sampling decision so petfood never exports a span whose parent was dropped.
+        .with_sampler(Sampler::ParentBased(Box::new(Sampler::AlwaysOn)))
         .with_id_generator(RandomIdGenerator::default())
         .with_max_events_per_span(64)
-        .with_max_attributes_per_span(16)
+        // 16 silently dropped user.id and the status attributes from server spans.
+        .with_max_attributes_per_span(128)
         .with_max_links_per_span(16)
         .with_resource(resource)
         .build();
