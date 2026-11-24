@@ -241,8 +241,7 @@ public class SearchController {
             span.setAttribute("search.pettype", validatedPetType);
             span.setAttribute("search.petcolor", normalizedPetColor);
             span.setAttribute("search.petid", normalizedPetId);
-            span.setAttribute("search.userid", userId);
-            span.setAttribute("search.userid_alias", userIdAlias);
+            span.setAttribute("user.id", userId.isEmpty() ? userIdAlias : userId);
 
             List<Pet> result = ddbClient.scan(
                     buildScanRequest(validatedPetType, normalizedPetColor, normalizedPetId))

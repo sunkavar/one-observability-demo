@@ -272,7 +272,7 @@ public class SearchController {
             !validatedPetType.equals("puppy") && !validatedPetType.equals("kitten") && !validatedPetType.equals("bunny")) {
             logger.warn("Invalid pet type requested by userId '{}' - petType: '{}', returning 404 error", resolvedUserId, validatedPetType);
             span.setAttribute("error", true);
-            span.setAttribute("error.userId", resolvedUserId);
+            span.setAttribute("user.id", resolvedUserId);
             String errorMsg = validatedPetType + " pet type not found";
             span.setAttribute("error.message", errorMsg);
             span.end();
@@ -297,7 +297,7 @@ public class SearchController {
             span.setAttribute("search.pettype", validatedPetType);
             span.setAttribute("search.petcolor", normalizedPetColor);
             span.setAttribute("search.petid", normalizedPetId);
-            span.setAttribute("search.userid", resolvedUserId);
+            span.setAttribute("user.id", resolvedUserId);
 
             // Log all input parameters for comprehensive tracing
             span.setAttribute("search.input.pettype", petType);
@@ -306,8 +306,6 @@ public class SearchController {
             span.setAttribute("search.input.petcolor_alias", petColorAlias);
             span.setAttribute("search.input.petid", petId);
             span.setAttribute("search.input.petid_alias", petIdAlias);
-            span.setAttribute("search.input.userid", userId);
-            span.setAttribute("search.input.userid_alias", userIdAlias);
 
             logger.info("Starting DynamoDB scan for userId '{}' with parameters - petType: '{}', petColor: '{}', petId: '{}'",
                        resolvedUserId, validatedPetType, normalizedPetColor, normalizedPetId);
@@ -333,7 +331,6 @@ public class SearchController {
 
         } catch (Exception e) {
             span.recordException(e);
-            span.setAttribute("error.userId", resolvedUserId);
             logger.error("Error while searching for userId '{}' with parameters - petType: '{}', petColor: '{}', petId: '{}'",
                         resolvedUserId, validatedPetType, normalizedPetColor, normalizedPetId, e);
             throw e;

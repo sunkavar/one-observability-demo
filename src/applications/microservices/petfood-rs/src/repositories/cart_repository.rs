@@ -326,7 +326,7 @@ impl DynamoDbCartRepository {
 
 #[async_trait]
 impl CartRepository for DynamoDbCartRepository {
-    #[instrument(skip(self), fields(table = %self.table_name, user_id = %user_id))]
+    #[instrument(skip(self, user_id), fields(table = %self.table_name, user.id = %user_id))]
     async fn find_cart(&self, user_id: &str) -> RepositoryResult<Option<Cart>> {
         info!("Finding cart for user");
 
@@ -358,7 +358,7 @@ impl CartRepository for DynamoDbCartRepository {
         }
     }
 
-    #[instrument(skip(self, cart), fields(table = %self.table_name, user_id = %cart.user_id, item_count = cart.items.len()))]
+    #[instrument(skip(self, cart), fields(table = %self.table_name, user.id = %cart.user_id, item_count = cart.items.len()))]
     async fn save_cart(&self, cart: Cart) -> RepositoryResult<Cart> {
         info!("Saving cart");
 
@@ -383,7 +383,7 @@ impl CartRepository for DynamoDbCartRepository {
         Ok(cart)
     }
 
-    #[instrument(skip(self), fields(table = %self.table_name, user_id = %user_id))]
+    #[instrument(skip(self, user_id), fields(table = %self.table_name, user.id = %user_id))]
     async fn delete_cart(&self, user_id: &str) -> RepositoryResult<()> {
         info!("Deleting cart");
 
@@ -406,7 +406,7 @@ impl CartRepository for DynamoDbCartRepository {
         .await
     }
 
-    #[instrument(skip(self), fields(table = %self.table_name, user_id = %user_id))]
+    #[instrument(skip(self, user_id), fields(table = %self.table_name, user.id = %user_id))]
     async fn cart_exists(&self, user_id: &str) -> RepositoryResult<bool> {
         info!("Checking if cart exists");
 

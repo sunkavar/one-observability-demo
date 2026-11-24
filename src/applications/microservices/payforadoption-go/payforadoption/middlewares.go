@@ -58,7 +58,7 @@ func (mw *middleware) CompleteAdoption(ctx context.Context, petId, petType, user
 		span.SetAttributes(
 			attribute.String("PetId", petId),
 			attribute.String("PetType", petType),
-			attribute.String("UserID", userID),
+			attribute.String("user.id", userID),
 			attribute.Float64("TimeTakenSeconds", time.Since(begin).Seconds()),
 		)
 
@@ -99,7 +99,7 @@ func (mw *middleware) CleanupAdoptions(ctx context.Context, userID string) (err 
 
 		span := trace.SpanFromContext(ctx)
 		span.SetAttributes(
-			attribute.String("UserID", userID),
+			attribute.String("user.id", userID),
 			attribute.Float64("TimeTakenSeconds", time.Since(begin).Seconds()),
 		)
 

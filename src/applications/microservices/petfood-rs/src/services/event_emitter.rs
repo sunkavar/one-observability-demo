@@ -100,7 +100,7 @@ impl EventEmitter {
         fields(
             event_type = %event.event_type,
             order_id = %event.order_id,
-            user_id = %event.user_id,
+            user.id = %event.user_id,
             item_count = event.items.len(),
             event_bus = %self.config.event_bus_name,
             source = %self.config.source_name,

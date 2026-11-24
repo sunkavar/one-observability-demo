@@ -200,7 +200,7 @@ pub async fn get_food(
 // =============================================================================
 
 /// Get a user's cart
-#[instrument(name = "get_cart", skip(state), fields(user_id = %user_id))]
+#[instrument(name = "get_cart", skip(state, user_id), fields(user.id = %user_id))]
 pub async fn get_cart(
     State(state): State<ApiState>,
     Path(user_id): Path<String>,
@@ -235,8 +235,8 @@ pub async fn get_cart(
 }
 
 /// Add an item to the cart
-#[instrument(name = "add_cart_item", skip(state, request), fields(
-    user_id = %user_id,
+#[instrument(name = "add_cart_item", skip(state, request, user_id), fields(
+    user.id = %user_id,
     food_id = %request.food_id,
     quantity = %request.quantity,
 ))]
@@ -280,8 +280,8 @@ pub async fn add_cart_item(
 }
 
 /// Update the quantity of an item in the cart
-#[instrument(name = "update_cart_item", skip(state, request), fields(
-    user_id = %user_id,
+#[instrument(name = "update_cart_item", skip(state, request, user_id), fields(
+    user.id = %user_id,
     food_id = %food_id,
     quantity = %request.quantity,
 ))]
@@ -325,8 +325,8 @@ pub async fn update_cart_item(
 }
 
 /// Remove an item from the cart
-#[instrument(name = "remove_cart_item", skip(state), fields(
-    user_id = %user_id,
+#[instrument(name = "remove_cart_item", skip(state, user_id), fields(
+    user.id = %user_id,
     food_id = %food_id,
 ))]
 pub async fn remove_cart_item(
@@ -367,8 +367,8 @@ pub async fn remove_cart_item(
 }
 
 /// Clear all items from the cart
-#[instrument(name = "clear_cart", skip(state), fields(
-    user_id = %user_id,
+#[instrument(name = "clear_cart", skip(state, user_id), fields(
+    user.id = %user_id,
 ))]
 pub async fn clear_cart(
     State(state): State<ApiState>,
@@ -400,8 +400,8 @@ pub async fn clear_cart(
 }
 
 /// Delete the entire cart
-#[instrument(name = "delete_cart", skip(state), fields(
-    user_id = %user_id,
+#[instrument(name = "delete_cart", skip(state, user_id), fields(
+    user.id = %user_id,
 ))]
 pub async fn delete_cart(
     State(state): State<ApiState>,
@@ -437,8 +437,8 @@ pub async fn delete_cart(
 }
 
 /// Checkout cart and create order
-#[instrument(name = "checkout_cart", skip(state, request), fields(
-    user_id = %user_id,
+#[instrument(name = "checkout_cart", skip(state, request, user_id), fields(
+    user.id = %user_id,
     has_shipping_address = request.shipping_address.is_some(),
     has_billing_address = request.billing_address.is_some(),
 ))]

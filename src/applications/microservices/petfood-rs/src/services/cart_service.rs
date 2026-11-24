@@ -34,7 +34,7 @@ impl CartService {
     }
 
     /// Get a user's cart
-    #[instrument(skip(self), fields(user_id = %user_id))]
+    #[instrument(skip(self, user_id), fields(user.id = %user_id))]
     pub async fn get_cart(&self, user_id: &str) -> ServiceResult<CartResponse> {
         info!("Getting cart for user");
 
@@ -61,7 +61,7 @@ impl CartService {
     }
 
     /// Add an item to the cart
-    #[instrument(skip(self, request), fields(user_id = %user_id, food_id = %request.food_id, quantity = request.quantity))]
+    #[instrument(skip(self, request, user_id), fields(user.id = %user_id, food_id = %request.food_id, quantity = request.quantity))]
     pub async fn add_item(
         &self,
         user_id: &str,
@@ -124,7 +124,7 @@ impl CartService {
     }
 
     /// Update the quantity of an item in the cart
-    #[instrument(skip(self, request), fields(user_id = %user_id, food_id = %food_id, quantity = request.quantity))]
+    #[instrument(skip(self, request, user_id), fields(user.id = %user_id, food_id = %food_id, quantity = request.quantity))]
     pub async fn update_item(
         &self,
         user_id: &str,
@@ -205,7 +205,7 @@ impl CartService {
     }
 
     /// Remove an item from the cart
-    #[instrument(skip(self), fields(user_id = %user_id, food_id = %food_id))]
+    #[instrument(skip(self, user_id), fields(user.id = %user_id, food_id = %food_id))]
     pub async fn remove_item(&self, user_id: &str, food_id: &str) -> ServiceResult<()> {
         info!("Removing item from cart");
 
@@ -242,7 +242,7 @@ impl CartService {
     }
 
     /// Clear all items from the cart
-    #[instrument(skip(self), fields(user_id = %user_id))]
+    #[instrument(skip(self, user_id), fields(user.id = %user_id))]
     pub async fn clear_cart(&self, user_id: &str) -> ServiceResult<()> {
         info!("Clearing cart");
 
@@ -270,7 +270,7 @@ impl CartService {
     }
 
     /// Delete the entire cart
-    #[instrument(skip(self), fields(user_id = %user_id))]
+    #[instrument(skip(self, user_id), fields(user.id = %user_id))]
     pub async fn delete_cart(&self, user_id: &str) -> ServiceResult<()> {
         info!("Deleting cart");
 
@@ -292,7 +292,7 @@ impl CartService {
     }
 
     /// Get the total number of items in a user's cart
-    #[instrument(skip(self), fields(user_id = %user_id))]
+    #[instrument(skip(self, user_id), fields(user.id = %user_id))]
     pub async fn get_cart_item_count(&self, user_id: &str) -> ServiceResult<u32> {
         info!("Getting cart item count");
 
@@ -304,7 +304,7 @@ impl CartService {
     }
 
     /// Get the total price of items in a user's cart
-    #[instrument(skip(self), fields(user_id = %user_id))]
+    #[instrument(skip(self, user_id), fields(user.id = %user_id))]
     pub async fn get_cart_total(&self, user_id: &str) -> ServiceResult<rust_decimal::Decimal> {
         info!("Getting cart total");
 
@@ -316,7 +316,7 @@ impl CartService {
     }
 
     /// Check if a user has any items in their cart
-    #[instrument(skip(self), fields(user_id = %user_id))]
+    #[instrument(skip(self, user_id), fields(user.id = %user_id))]
     pub async fn is_cart_empty(&self, user_id: &str) -> ServiceResult<bool> {
         info!("Checking if cart is empty");
 
@@ -331,7 +331,7 @@ impl CartService {
     }
 
     /// Validate cart contents (check availability and stock)
-    #[instrument(skip(self), fields(user_id = %user_id))]
+    #[instrument(skip(self, user_id), fields(user.id = %user_id))]
     pub async fn validate_cart(&self, user_id: &str) -> ServiceResult<Vec<String>> {
         info!("Validating cart contents");
 
@@ -485,7 +485,7 @@ impl CartService {
     }
 
     /// Checkout cart and create order
-    #[instrument(skip(self, request), fields(user_id = %user_id))]
+    #[instrument(skip(self, request, user_id), fields(user.id = %user_id))]
     pub async fn checkout(
         &self,
         user_id: &str,

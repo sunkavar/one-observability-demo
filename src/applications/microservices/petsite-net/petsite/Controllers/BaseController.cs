@@ -50,9 +50,9 @@ namespace PetSite.Controllers
             ViewData["UserId"] = userId;
 
             var currentActivity = Activity.Current;
-            if (currentActivity != null && !currentActivity.Tags.Any(tag => tag.Key == "userId"))
+            if (currentActivity != null && !currentActivity.Tags.Any(tag => tag.Key == "user.id"))
             {
-                currentActivity.SetTag("userId", userId);
+                currentActivity.SetTag("user.id", userId);
             }
 
             return false;

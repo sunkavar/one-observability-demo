@@ -283,7 +283,7 @@ impl BusinessTracingMiddleware {
     /// Trace a cart operation
     #[instrument(skip_all, fields(
         operation = %operation,
-        user_id = user_id,
+        user.id = user_id,
     ))]
     pub async fn trace_cart_operation<F, T, E>(
         &self,
