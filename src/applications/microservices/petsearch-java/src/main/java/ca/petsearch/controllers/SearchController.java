@@ -203,9 +203,9 @@ public class SearchController {
 
     private Pet mapToPet(Map<String, AttributeValue> item) {
         String petId = item.get("petid").getS();
-        String availability = item.get("availability").getS();
+        String availability = PetTextFilter.clean(item.get("availability").getS());
         String cutenessRate = item.get("cuteness_rate").getS();
-        String petColor = item.get("petcolor").getS();
+        String petColor = PetTextFilter.clean(item.get("petcolor").getS());
         String petType = item.get("pettype").getS();
         String price = item.get("price").getS();
         String petUrl = getPetUrl(petType, item.get("image").getS());

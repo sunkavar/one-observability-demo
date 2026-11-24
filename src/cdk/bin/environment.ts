@@ -352,6 +352,12 @@ export const EKS_CLUSTER_ACCESS_ROLE_NAME = process.env.EKS_CLUSTER_ACCESS_ROLE_
 export const CUSTOM_ENABLE_SLO = process.env.CUSTOM_ENABLE_SLO == 'true' || false;
 export const CUSTOM_ENABLE_ZEUS = process.env.CUSTOM_ENABLE_ZEUS == 'true' || false;
 
+/** Daily petsearch CPU regression for the profiles use case. Off by default: it degrades petsearch on purpose. */
+export const ENABLE_PROFILES_FAULT_SCHEDULE = process.env.ENABLE_PROFILES_FAULT_SCHEDULE == 'true' || false;
+/** EventBridge Scheduler expression, in UTC. */
+export const PROFILES_FAULT_SCHEDULE = process.env.PROFILES_FAULT_SCHEDULE || 'cron(0 16 * * ? *)';
+export const PROFILES_FAULT_DURATION_MINUTES = Number(process.env.PROFILES_FAULT_DURATION_MINUTES || '60');
+
 /** Threat Detection and Incident Response (TDIR) feature flags */
 export const CUSTOM_ENABLE_DETECTIVE = process.env.CUSTOM_ENABLE_DETECTIVE == 'true' || false;
 export const CUSTOM_ENABLE_UDS = process.env.CUSTOM_ENABLE_UDS == 'true' || false;

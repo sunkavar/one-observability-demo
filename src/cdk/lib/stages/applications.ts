@@ -44,9 +44,12 @@ import {
     CUSTOM_ENABLE_SLO,
     CUSTOM_ENABLE_WAF,
     ENABLE_OPENSEARCH,
+    ENABLE_PROFILES_FAULT_SCHEDULE,
     ENABLE_WAGGLE_AI_AGENTS,
     HostType,
     PARAMETER_STORE_PREFIX,
+    PROFILES_FAULT_DURATION_MINUTES,
+    PROFILES_FAULT_SCHEDULE,
 } from '../../bin/environment';
 import {
     CloudWatchAgentTraceMode,
@@ -91,6 +94,7 @@ import { GlobalWaf, RegionalWaf } from '../constructs/waf';
 import { CfnWebACLAssociation } from 'aws-cdk-lib/aws-wafv2';
 import { DynamoDBWriteTestConstruct } from '../serverless/functions/dynamo-capacity/dynamo-database-write-test-construct';
 import { ManagedPrometheusCollector } from '../constructs/managed-prometheus-collector';
+import { ProfilesFaultSchedule } from '../constructs/profiles-fault-schedule';
 
 /** Defines where and how a microservice is deployed (host type, compute type, architecture). */
 export interface MicroserviceApplicationPlacement {
@@ -414,6 +418,17 @@ export class MicroservicesStack extends Stack {
                         },
                         enableSLO: CUSTOM_ENABLE_SLO,
                     });
+                    const petSearchService = svc.service;
+                    if (ENABLE_PROFILES_FAULT_SCHEDULE && petSearchService) {
+                        new ProfilesFaultSchedule(this, 'PetSearchProfilesFault', {
+                            cluster: imports.ecsExports.cluster,
+                            serviceName: petSearchService.serviceName,
+                            taskDefinition: svc.taskDefinition,
+                            containerName: svc.container.containerName,
+                            scheduleExpression: PROFILES_FAULT_SCHEDULE,
+                            faultDurationMinutes: PROFILES_FAULT_DURATION_MINUTES,
+                        });
+                    }
                 } else {
                     throw new Error(`EKS is not supported for ${name}`);
                 }
