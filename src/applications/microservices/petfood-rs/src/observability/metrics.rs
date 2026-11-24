@@ -256,8 +256,8 @@ mod tests {
     fn test_http_request_recording() {
         let metrics = Metrics::new().unwrap();
         // These should not panic
-        metrics.record_http_request("GET", "/api/foods", 200, 0.123);
-        metrics.record_http_request("POST", "/api/foods", 201, 0.456);
+        metrics.record_http_request("GET", "/foods", 200, 0.123);
+        metrics.record_http_request("POST", "/foods", 201, 0.456);
     }
 
     #[test]
@@ -278,8 +278,8 @@ mod tests {
     #[test]
     fn test_in_flight_requests() {
         let metrics = Metrics::new().unwrap();
-        metrics.increment_in_flight("GET", "/api/foods");
-        metrics.increment_in_flight("GET", "/api/foods");
-        metrics.decrement_in_flight("GET", "/api/foods");
+        metrics.increment_in_flight("GET", "/foods");
+        metrics.increment_in_flight("GET", "/foods");
+        metrics.decrement_in_flight("GET", "/foods");
     }
 }

@@ -1,8 +1,7 @@
 diff --git a/src/applications/microservices/waggle_ai_agents/common/petstore.py b/src/applications/microservices/waggle_ai_agents/common/petstore.py
-index 14a73003..cf995262 100644
 --- a/src/applications/microservices/waggle_ai_agents/common/petstore.py
 +++ b/src/applications/microservices/waggle_ai_agents/common/petstore.py
-@@ -129,10 +129,11 @@ def _with_image_url(payload: Any) -> Any:
+@@ -132,10 +132,11 @@ def _with_image_url(payload: Any) -> Any:
      return payload
 
 
@@ -12,13 +11,12 @@ index 14a73003..cf995262 100644
 +    """Return the pet-food catalog, optionally filtered server-side by `search`."""
 +    params = {"search": search} if search else None
      return _with_image_url(
--        _get(config.backend_url("PETFOOD_API_URL"), "petfood", "/api/foods"),
-+        _get(config.backend_url("PETFOOD_API_URL"), "petfood", "/api/foods", params),
+-        _get(config.backend_url("PETFOOD_API_URL"), "petfood", "/foods"),
++        _get(config.backend_url("PETFOOD_API_URL"), "petfood", "/foods", params),
      )
 
 
 diff --git a/src/applications/microservices/waggle_ai_agents/nutrition_langgraph/agent.py b/src/applications/microservices/waggle_ai_agents/nutrition_langgraph/agent.py
-index abcc9fbd..a784bd5c 100644
 --- a/src/applications/microservices/waggle_ai_agents/nutrition_langgraph/agent.py
 +++ b/src/applications/microservices/waggle_ai_agents/nutrition_langgraph/agent.py
 @@ -40,9 +40,11 @@ def get_pet_profile(pettype: str = "", petcolor: str = "", petid: str = "") -> s

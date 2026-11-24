@@ -195,7 +195,7 @@ class PetAdoptionsService:
         finally:
             conn.close()
 
-    def _get_latest_adoptions(self) -> list[dict[str, Any]]:
+    def _get_latest_adoptions(self, user_id: str | None = None) -> list[dict[str, Any]]:
         """
         Get latest adoptions from database with user information -
         intentionally slow for observability workshop
@@ -220,13 +220,14 @@ class PetAdoptionsService:
                 FROM transactions t, users u
                 WHERE t.user_id = u.user_id
                     AND t.status = 'completed'
+                    AND (%s::text IS NULL OR t.user_id = %s)
                 ORDER BY t.adoption_date DESC, LENGTH(u.full_name) DESC
                 LIMIT 25
                 """
 
                 logger.info("Executing adoption list query with user join")
                 start_time = time.time()
-                cursor.execute(slow_query)
+                cursor.execute(slow_query, (user_id, user_id))
                 rows = cursor.fetchall()
                 query_duration = time.time() - start_time
 
@@ -252,12 +253,12 @@ class PetAdoptionsService:
     def _search_pet_info(self, pet_id: str) -> list[dict[str, Any]]:
         """Search for pet information by pet_id"""
         self._refresh_parameters_if_needed()
-        url = f"{self.pet_search_url}petid={pet_id}"
+        url = f"{self.pet_search_url.rstrip('/')}/{pet_id}"
 
         try:
             response = requests.get(url, timeout=30)
             response.raise_for_status()
-            return response.json()
+            return [response.json()]
         except Exception as e:
             logger.error(f"Failed to search pet {pet_id}: {e}")
             return []
@@ -266,13 +267,13 @@ class PetAdoptionsService:
         """Health check endpoint"""
         return "alive"
 
-    def list_adoptions(self) -> list[Adoption]:
+    def list_adoptions(self, user_id: str | None = None) -> list[Adoption]:
         """List adoptions with pet information"""
         start_time = time.time()
 
         try:
             # Get adoptions from database
-            adoptions = self._get_latest_adoptions()
+            adoptions = self._get_latest_adoptions(user_id)
 
             # Enrich with pet information
             enriched_adoptions = []
@@ -343,11 +344,11 @@ async def health_check():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/api/adoptionlist/", response_model=list[Adoption], tags=["adoptions"])
-async def list_adoptions():
+@app.get("/adoptions", response_model=list[Adoption], tags=["adoptions"])
+async def list_adoptions(user_id: str | None = None):
     """List adoptions endpoint"""
     try:
-        adoptions = service.list_adoptions()
+        adoptions = service.list_adoptions(user_id)
         return adoptions
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

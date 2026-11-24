@@ -35,14 +35,14 @@
             </p>
 
             <div class="ps-controls">
-                <form method="get">
+                <form method="get" asp-controller="Home" asp-action="Index">
                     <label class="pet-label" data-title="Type">
-                        <select name="selectedPetType" asp-for="@Model.Varieties.SelectedPetType"
+                        <select name="pet_type" asp-for="@Model.Varieties.SelectedPetType"
                                 asp-items="@Model.Varieties.PetTypes" class="pet-filter"
                                 aria-label="Pet type"></select>
                     </label>
                     <label class="pet-label" data-title="Color">
-                        <select name="selectedPetColor" asp-for="@Model.Varieties.SelectedPetColor"
+                        <select name="pet_color" asp-for="@Model.Varieties.SelectedPetColor"
                                 asp-items="@Model.Varieties.PetColors" class="pet-filter"
                                 aria-label="Colour"></select>
                     </label>

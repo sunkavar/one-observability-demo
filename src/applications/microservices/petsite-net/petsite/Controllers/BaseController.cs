@@ -39,8 +39,7 @@ namespace PetSite.Controllers
                 }
                 else
                 {
-                    // Redirect to Home/Index if userId is missing on other pages
-                    Response.Redirect("/Home/Index");
+                    Response.Redirect("/pets");
                     return true;
                 }
             }

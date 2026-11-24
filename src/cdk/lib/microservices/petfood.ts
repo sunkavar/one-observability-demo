@@ -191,9 +191,9 @@ export class PetFoodECSService extends EcsService {
                 PARAMETER_STORE_PREFIX,
                 new Map(
                     Object.entries({
-                        [SSM_PARAMETER_NAMES.FOOD_API_URL]: `http://${this.loadBalancedService?.loadBalancer.loadBalancerDnsName}/api/foods`,
+                        [SSM_PARAMETER_NAMES.FOOD_API_URL]: `http://${this.loadBalancedService?.loadBalancer.loadBalancerDnsName}/foods`,
                         [SSM_PARAMETER_NAMES.PET_FOOD_METRICS_URL]: `http://${this.loadBalancedService?.loadBalancer.loadBalancerDnsName}/metrics`,
-                        [SSM_PARAMETER_NAMES.PET_FOOD_CART_URL]: `http://${this.loadBalancedService?.loadBalancer.loadBalancerDnsName}/api/cart`,
+                        [SSM_PARAMETER_NAMES.PET_FOOD_CART_URL]: `http://${this.loadBalancedService?.loadBalancer.loadBalancerDnsName}/carts`,
                     }),
                 ),
             );

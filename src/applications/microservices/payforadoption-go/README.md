@@ -9,7 +9,7 @@ This microservice handles the complete pet adoption workflow with a clean separa
 ## Architecture Overview
 
 ```
-POST /completeadoption → payforadoption-go:
+POST /adoptions → payforadoption-go:
 ├── CreateTransaction() → transactions table (synchronous)
 ├── UpdateAvailability() → petstatus service (synchronous)
 └── SendHistoryMessage() → SQS → pethistory → transaction_history table (async)
@@ -24,14 +24,19 @@ POST /completeadoption → payforadoption-go:
 ## API Endpoints
 
 ### Complete Adoption
-`POST /api/completeadoption`
+`POST /adoptions`
 
 Processes a complete pet adoption workflow including payment, database transaction, pet status update, and history tracking.
 
-**Query Parameters:**
-- `petId` (required): The ID of the pet being adopted
-- `petType` (required): The type of pet (e.g., "dog", "cat", "bunny")
-- `userId` (required): The ID of the user adopting the pet
+**JSON body:**
+```json
+{"pet_id": "pet123", "pet_type": "puppy", "user_id": "user456"}
+```
+- `pet_id` (required): The ID of the pet being adopted
+- `pet_type` (required): The type of pet (e.g., "dog", "cat", "bunny")
+- `user_id` (required): The ID of the user adopting the pet
+
+Returns `201 Created` on success, `400` if a field is missing or the body is not valid JSON.
 
 **Response:**
 ```json
@@ -53,15 +58,15 @@ Processes a complete pet adoption workflow including payment, database transacti
 ### Health Check
 `GET /health/status`
 
-Returns the health status of the service.
+Returns the health status of the service. `/health/status` and `/metrics` produce no trace spans.
 
 ### Cleanup Adoptions
-`POST /api/cleanupadoptions`
+`DELETE /adoptions?user_id=<user_id>`
 
-Clears the current transactions table. Historical data is maintained separately by the pethistory service.
+Clears the current transactions for the user. Historical data is maintained separately by the pethistory service.
 
 ### Trigger Seeding
-`POST /api/triggerseeding`
+`POST /admin/seed`
 
 Seeds the DynamoDB table with sample pet data and creates the `transactions` SQL table.
 

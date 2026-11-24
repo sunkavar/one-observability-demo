@@ -8,7 +8,7 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::sync::Arc;
-use tracing::{error, info, instrument};
+use tracing::{error, info};
 
 use crate::models::{
     AddCartItemRequest, CartItemResponse, CartResponse, FoodFilters, FoodListApiResponse,
@@ -29,9 +29,7 @@ pub struct ApiState {
 /// Query parameters for listing foods
 #[derive(Debug, Deserialize)]
 pub struct ListFoodsQuery {
-    #[serde(alias = "pettype")]
     pub pet_type: Option<String>,
-    #[serde(alias = "foodtype")]
     pub food_type: Option<String>,
     pub availability_status: Option<String>,
     pub min_price: Option<rust_decimal::Decimal>,
@@ -63,17 +61,19 @@ pub fn create_api_router(
 
     Router::new()
         // Food browsing endpoints (read-only)
-        .route("/api/foods", get(list_foods))
-        .route("/api/foods/:food_id", get(get_food))
+        .route("/foods", get(list_foods))
+        .route("/foods/{food_id}", get(get_food))
         // Cart management endpoints
-        .route("/api/cart/:user_id", get(get_cart).delete(delete_cart))
-        .route("/api/cart/:user_id/items", post(add_cart_item))
+        .route("/carts/{user_id}", get(get_cart).delete(delete_cart))
         .route(
-            "/api/cart/:user_id/items/:food_id",
+            "/carts/{user_id}/items",
+            post(add_cart_item).delete(clear_cart),
+        )
+        .route(
+            "/carts/{user_id}/items/{food_id}",
             put(update_cart_item).delete(remove_cart_item),
         )
-        .route("/api/cart/:user_id/clear", post(clear_cart))
-        .route("/api/cart/:user_id/checkout", post(checkout_cart))
+        .route("/carts/{user_id}/checkout", post(checkout_cart))
         .with_state(state)
 }
 
@@ -82,11 +82,6 @@ pub fn create_api_router(
 // =============================================================================
 
 /// List all foods with optional filters
-#[instrument(name = "list_foods", skip(state), fields(
-    pet_type = query.pet_type.as_deref(),
-    food_type = query.food_type.as_deref(),
-    search = query.search.as_deref(),
-))]
 pub async fn list_foods(
     State(state): State<ApiState>,
     Query(query): Query<ListFoodsQuery>,
@@ -153,7 +148,6 @@ pub async fn list_foods(
 }
 
 /// Get a specific food by ID
-#[instrument(name = "get_food", skip(state), fields(food_id = %food_id))]
 pub async fn get_food(
     State(state): State<ApiState>,
     Path(food_id): Path<String>,
@@ -200,7 +194,6 @@ pub async fn get_food(
 // =============================================================================
 
 /// Get a user's cart
-#[instrument(name = "get_cart", skip(state, user_id), fields(user.id = %user_id))]
 pub async fn get_cart(
     State(state): State<ApiState>,
     Path(user_id): Path<String>,
@@ -235,11 +228,6 @@ pub async fn get_cart(
 }
 
 /// Add an item to the cart
-#[instrument(name = "add_cart_item", skip(state, request, user_id), fields(
-    user.id = %user_id,
-    food_id = %request.food_id,
-    quantity = %request.quantity,
-))]
 pub async fn add_cart_item(
     State(state): State<ApiState>,
     Path(user_id): Path<String>,
@@ -280,11 +268,6 @@ pub async fn add_cart_item(
 }
 
 /// Update the quantity of an item in the cart
-#[instrument(name = "update_cart_item", skip(state, request, user_id), fields(
-    user.id = %user_id,
-    food_id = %food_id,
-    quantity = %request.quantity,
-))]
 pub async fn update_cart_item(
     State(state): State<ApiState>,
     Path((user_id, food_id)): Path<(String, String)>,
@@ -325,10 +308,6 @@ pub async fn update_cart_item(
 }
 
 /// Remove an item from the cart
-#[instrument(name = "remove_cart_item", skip(state, user_id), fields(
-    user.id = %user_id,
-    food_id = %food_id,
-))]
 pub async fn remove_cart_item(
     State(state): State<ApiState>,
     Path((user_id, food_id)): Path<(String, String)>,
@@ -367,9 +346,6 @@ pub async fn remove_cart_item(
 }
 
 /// Clear all items from the cart
-#[instrument(name = "clear_cart", skip(state, user_id), fields(
-    user.id = %user_id,
-))]
 pub async fn clear_cart(
     State(state): State<ApiState>,
     Path(user_id): Path<String>,
@@ -400,9 +376,6 @@ pub async fn clear_cart(
 }
 
 /// Delete the entire cart
-#[instrument(name = "delete_cart", skip(state, user_id), fields(
-    user.id = %user_id,
-))]
 pub async fn delete_cart(
     State(state): State<ApiState>,
     Path(user_id): Path<String>,
@@ -437,11 +410,6 @@ pub async fn delete_cart(
 }
 
 /// Checkout cart and create order
-#[instrument(name = "checkout_cart", skip(state, request, user_id), fields(
-    user.id = %user_id,
-    has_shipping_address = request.shipping_address.is_some(),
-    has_billing_address = request.billing_address.is_some(),
-))]
 pub async fn checkout_cart(
     State(state): State<ApiState>,
     Path(user_id): Path<String>,

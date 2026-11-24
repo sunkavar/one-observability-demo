@@ -7,14 +7,12 @@ package ca.petsearch.controllers;
 import ca.petsearch.MetricEmitter;
 import ca.petsearch.ParameterRefreshManager;
 import ca.petsearch.RandomNumberGenerator;
-import com.amazonaws.HttpMethod;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
 import com.amazonaws.services.dynamodbv2.model.Condition;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest;
 import com.amazonaws.services.simplesystemsmanagement.AWSSimpleSystemsManagement;
 import com.amazonaws.services.simplesystemsmanagement.model.GetParameterRequest;
 import com.amazonaws.services.simplesystemsmanagement.model.GetParameterResult;
@@ -22,17 +20,14 @@ import com.amazonaws.services.simplesystemsmanagement.model.ParameterNotFoundExc
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Scope;
-import io.opentelemetry.instrumentation.annotations.WithSpan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -115,38 +110,11 @@ public class SearchController {
     }
 
     private String getPetUrl(String petType, String image) {
-        Span span = tracer.spanBuilder("Get Pet URL").startSpan();
-
-        try (Scope scope = span.makeCurrent()) {
-            logger.debug("Building pet URL for petType: '{}', image: '{}'", petType, image);
-
-            // CloudFront now serves the images directly - no need for pre-signed URLs
-            String imagesCdnUrl = getSSMParameter(imagesCdnUrlParam);
-            String key = getKey(petType, image);
-
-            String cloudFrontUrl = String.format("%s/%s", imagesCdnUrl, key);
-            logger.info("Generated CloudFront URL for petType '{}', image '{}': {}", petType, image, cloudFrontUrl);
-
-            span.setAttribute("pet.url.petType", petType);
-            span.setAttribute("pet.url.image", image);
-            span.setAttribute("pet.url.key", key);
-            span.setAttribute("pet.url.cloudFrontUrl", cloudFrontUrl);
-
-            return cloudFrontUrl;
-
-        } catch (Exception e) {
-            logger.error("Error while building CloudFront URL for petType '{}', image '{}'", petType, image, e);
-            span.recordException(e);
-            span.setAttribute("error.petType", petType);
-            span.setAttribute("error.image", image);
-            throw (e);
-        } finally {
-            span.end();
-        }
+        String cloudFrontUrl = String.format("%s/%s", getSSMParameter(imagesCdnUrlParam), getKey(petType, image));
+        logger.debug("Generated CloudFront URL for petType '{}', image '{}': {}", petType, image, cloudFrontUrl);
+        return cloudFrontUrl;
     }
 
-    @WithSpan("Get parameter from Systems Manager or cache") // this annotation can be used as an alternative to
-                                                             // tracer.spanBuilder
     private String getSSMParameter(String paramName) {
         logger.info("Attempting to retrieve SSM parameter: {}", paramName);
 
@@ -217,124 +185,84 @@ public class SearchController {
         return currentPet;
     }
 
-    /**
-     * Create SearchQuery object with parameter alias resolution
-     * Similar to petfood Rust application's serde alias handling
-     */
-    private SearchQuery createSearchQuery(String petType, String petTypeAlias,
-                                        String petColor, String petColorAlias,
-                                        String petId, String petIdAlias) {
-        // Resolve parameter aliases - primary names take precedence over aliases
-        String resolvedPetType = !SearchQuery.isEmptyParameter(petType) ? petType : petTypeAlias;
-        String resolvedPetColor = !SearchQuery.isEmptyParameter(petColor) ? petColor : petColorAlias;
-        String resolvedPetId = !SearchQuery.isEmptyParameter(petId) ? petId : petIdAlias;
-
-        return new SearchQuery(resolvedPetType, resolvedPetColor, resolvedPetId);
-    }
-
-    @GetMapping("/api/search")
-    public ResponseEntity<?> search(
-            @RequestParam(name = "pettype", defaultValue = "", required = false) String petType,
-            @RequestParam(name = "pet_type", defaultValue = "", required = false) String petTypeAlias,
-            @RequestParam(name = "petcolor", defaultValue = "", required = false) String petColor,
-            @RequestParam(name = "pet_color", defaultValue = "", required = false) String petColorAlias,
-            @RequestParam(name = "petid", defaultValue = "", required = false) String petId,
-            @RequestParam(name = "pet_id", defaultValue = "", required = false) String petIdAlias,
-            @RequestParam(name = "userId", defaultValue = "", required = false) String userId,
-            @RequestParam(name = "user_id", defaultValue = "", required = false) String userIdAlias)
+    @GetMapping("/pets")
+    public ResponseEntity<?> listPets(
+            @RequestParam(name = "pet_type", defaultValue = "", required = false) String petType,
+            @RequestParam(name = "pet_color", defaultValue = "", required = false) String petColor,
+            @RequestParam(name = "user_id", defaultValue = "", required = false) String userId)
             throws InterruptedException {
+        Span.current().setAttribute("user.id", userId);
+        logger.info("List pets request - userId: '{}', petType: '{}', petColor: '{}'", userId, petType, petColor);
 
-        // Resolve userId parameter (primary takes precedence over alias)
-        String resolvedUserId = !SearchQuery.isEmptyParameter(userId) ? userId : userIdAlias;
-        // The server span from the agent, so searches by user.id match the service's entry span.
-        Span.current().setAttribute("user.id", resolvedUserId);
-
-        // Log all input parameters for comprehensive tracing
-        logger.info("Search request received - userId: '{}', petType: '{}', petTypeAlias: '{}', petColor: '{}', petColorAlias: '{}', petId: '{}', petIdAlias: '{}', userIdAlias: '{}'",
-                   resolvedUserId, petType, petTypeAlias, petColor, petColorAlias, petId, petIdAlias, userIdAlias);
-        logger.info("Search parameters resolved - userId: '{}', resolved petType: '{}', resolved petColor: '{}', resolved petId: '{}'",
-                   resolvedUserId, petType, petColor, petId);
-
-        // Create SearchQuery object with parameter resolution (similar to petfood Rust serde aliases)
-        SearchQuery query = createSearchQuery(petType, petTypeAlias, petColor, petColorAlias, petId, petIdAlias);
-
-        Span span = tracer.spanBuilder("Scanning DynamoDB Table").startSpan();
-
-        // Use validated parameters from SearchQuery
+        SearchQuery query = new SearchQuery(petType, petColor, "");
         String validatedPetType = query.getValidatedPetType();
-        String normalizedPetColor = query.getNormalizedPetColor();
-        String normalizedPetId = query.getNormalizedPetId();
 
-        // Log validated search parameters
-        logger.info("Search query validated - userId: '{}', validatedPetType: '{}', normalizedPetColor: '{}', normalizedPetId: '{}'",
-                   resolvedUserId, validatedPetType, normalizedPetColor, normalizedPetId);
-
-        // return 404 error with custom message for invalid pet type
         if (!SearchQuery.isEmptyParameter(validatedPetType) &&
             !validatedPetType.equals("puppy") && !validatedPetType.equals("kitten") && !validatedPetType.equals("bunny")) {
-            logger.warn("Invalid pet type requested by userId '{}' - petType: '{}', returning 404 error", resolvedUserId, validatedPetType);
-            span.setAttribute("error", true);
-            span.setAttribute("user.id", resolvedUserId);
             String errorMsg = validatedPetType + " pet type not found";
+            logger.warn("Invalid pet type requested by userId '{}' - petType: '{}', returning 404", userId, validatedPetType);
+            Span span = tracer.spanBuilder("Scanning DynamoDB Table").startSpan();
+            span.setAttribute("error", true);
+            span.setAttribute("user.id", userId);
             span.setAttribute("error.message", errorMsg);
             span.end();
-            ErrorResponse errorResponse = new ErrorResponse(
-                    404,
-                    errorMsg,
-                    errorMsg,
-                    "/api/search");
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ErrorResponse(404, errorMsg, errorMsg, "/pets"));
         }
 
-        // This line is intentional. Delays searches
-        if (!SearchQuery.isEmptyParameter(validatedPetType) && validatedPetType.equals("bunny")) {
-            logger.info("Intentional delay triggered for userId '{}' searching for bunny pets", resolvedUserId);
-            logger.debug("Delaying the response on purpose, to show on traces as an issue - userId: '{}'", resolvedUserId);
-            TimeUnit.MILLISECONDS.sleep(3000);
-            logger.info("Delay completed for userId '{}' bunny search", resolvedUserId);
-        }
+        List<Pet> result = scanPets(query, userId);
+        metricEmitter.emitPetsReturnedMetric(result.size());
+        logger.info("List pets completed for userId '{}' - returning {} pets", userId, result.size());
+        return ResponseEntity.ok(result);
+    }
 
+    @GetMapping("/pets/{pet_id}")
+    public ResponseEntity<?> getPet(
+            @PathVariable("pet_id") String petId,
+            @RequestParam(name = "user_id", defaultValue = "", required = false) String userId)
+            throws InterruptedException {
+        Span.current().setAttribute("user.id", userId);
+        logger.info("Get pet request - userId: '{}', petId: '{}'", userId, petId);
+
+        List<Pet> result = scanPets(new SearchQuery("", "", petId), userId);
+        metricEmitter.emitPetsReturnedMetric(result.size());
+        if (result.isEmpty()) {
+            String errorMsg = "pet " + petId + " not found";
+            logger.warn("Pet not found for userId '{}' - petId: '{}', returning 404", userId, petId);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ErrorResponse(404, errorMsg, errorMsg, "/pets/" + petId));
+        }
+        return ResponseEntity.ok(result.get(0));
+    }
+
+    private List<Pet> scanPets(SearchQuery query, String userId) throws InterruptedException {
+        String petType = query.getValidatedPetType();
+        String petColor = query.getNormalizedPetColor();
+        String petId = query.getNormalizedPetId();
+
+        Span span = tracer.spanBuilder("Scanning DynamoDB Table").startSpan();
         try (Scope scope = span.makeCurrent()) {
-            // Log the resolved parameters for tracing
-            span.setAttribute("search.pettype", validatedPetType);
-            span.setAttribute("search.petcolor", normalizedPetColor);
-            span.setAttribute("search.petid", normalizedPetId);
-            span.setAttribute("user.id", resolvedUserId);
-
-            // Log all input parameters for comprehensive tracing
-            span.setAttribute("search.input.pettype", petType);
-            span.setAttribute("search.input.pettype_alias", petTypeAlias);
-            span.setAttribute("search.input.petcolor", petColor);
-            span.setAttribute("search.input.petcolor_alias", petColorAlias);
-            span.setAttribute("search.input.petid", petId);
-            span.setAttribute("search.input.petid_alias", petIdAlias);
-
-            logger.info("Starting DynamoDB scan for userId '{}' with parameters - petType: '{}', petColor: '{}', petId: '{}'",
-                       resolvedUserId, validatedPetType, normalizedPetColor, normalizedPetId);
-
-            List<Pet> result = ddbClient.scan(
-                    buildScanRequest(validatedPetType, normalizedPetColor, normalizedPetId))
-                    .getItems().stream().map(this::mapToPet)
-                    .collect(Collectors.toList());
-
-            logger.info("DynamoDB scan completed for userId '{}' - found {} pets matching criteria", resolvedUserId, result.size());
-
-            // Log details of each pet found
-            for (int i = 0; i < result.size(); i++) {
-                Pet pet = result.get(i);
-                logger.info("Pet {} for userId '{}': petId='{}', petType='{}', petColor='{}', availability='{}', cutenessRate='{}', price='{}'",
-                           i+1, resolvedUserId, pet.getPetid(), pet.getPettype(), pet.getPetcolor(),
-                           pet.getAvailability(), pet.getCuteness_rate(), pet.getPrice());
+            // This line is intentional. Delays searches
+            if (petType.equals("bunny")) {
+                logger.debug("Delaying the response on purpose, to show on traces as an issue - userId: '{}'", userId);
+                TimeUnit.MILLISECONDS.sleep(3000);
             }
 
-            metricEmitter.emitPetsReturnedMetric(result.size());
-            logger.info("Search completed successfully for userId '{}' - returning {} pets", resolvedUserId, result.size());
-            return ResponseEntity.ok(result);
+            span.setAttribute("search.pettype", petType);
+            span.setAttribute("search.petcolor", petColor);
+            span.setAttribute("search.petid", petId);
+            span.setAttribute("user.id", userId);
 
+            List<Pet> result = ddbClient.scan(buildScanRequest(petType, petColor, petId))
+                    .getItems().stream().map(this::mapToPet)
+                    .collect(Collectors.toList());
+            logger.info("DynamoDB scan completed for userId '{}' - found {} pets (petType: '{}', petColor: '{}', petId: '{}')",
+                       userId, result.size(), petType, petColor, petId);
+            return result;
         } catch (Exception e) {
             span.recordException(e);
-            logger.error("Error while searching for userId '{}' with parameters - petType: '{}', petColor: '{}', petId: '{}'",
-                        resolvedUserId, validatedPetType, normalizedPetColor, normalizedPetId, e);
+            logger.error("Error while scanning pets for userId '{}' - petType: '{}', petColor: '{}', petId: '{}'",
+                        userId, petType, petColor, petId, e);
             throw e;
         } finally {
             span.end();

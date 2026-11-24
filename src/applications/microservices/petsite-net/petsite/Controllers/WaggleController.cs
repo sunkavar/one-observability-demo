@@ -32,6 +32,7 @@ namespace PetSite.Controllers
             _refreshManager = refreshManager;
         }
 
+        [HttpGet("/waggle")]
         public IActionResult Index(string userId)
         {
             if (EnsureUserId()) return new EmptyResult();
@@ -39,7 +40,7 @@ namespace PetSite.Controllers
         }
 
         // Streams the runtime's SSE frames to the browser as produced, so idle timeouts never trip.
-        [HttpPost]
+        [HttpPost("/waggle/messages")]
         public async Task SendMessage([FromBody] ChatRequest request)
         {
             // Generate SessionId if absent and return it via a header; the body is a raw token stream.

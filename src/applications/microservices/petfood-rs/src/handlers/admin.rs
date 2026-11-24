@@ -70,13 +70,13 @@ pub fn create_admin_router(
 
     Router::new()
         // Database setup and management endpoints
-        .route("/api/admin/setup-tables", post(setup_tables))
-        .route("/api/admin/seed", post(seed_database))
-        .route("/api/admin/cleanup", post(cleanup_database))
+        .route("/admin/setup-tables", post(setup_tables))
+        .route("/admin/seed", post(seed_database))
+        .route("/admin/cleanup", post(cleanup_database))
         // Food management endpoints (admin only)
-        .route("/api/admin/foods", post(create_food))
+        .route("/admin/foods", post(create_food))
         .route(
-            "/api/admin/foods/:food_id",
+            "/admin/foods/{food_id}",
             put(update_food).delete(delete_food),
         )
         .with_state(state)

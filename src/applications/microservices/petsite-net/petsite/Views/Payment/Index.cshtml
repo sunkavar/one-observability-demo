@@ -43,7 +43,7 @@
               </div>
               @* the two next steps get their own hues: amber for the shop, Waggle teal for the assistant *@
               <div class="ps-nextrow">
-                <a asp-controller="FoodService" asp-action="Index" asp-route-userId="@ViewBag.UserId" asp-route-petType="@pet.pettype" asp-route-petId="@pet.petid" class="ps-next ps-next-food">
+                <a asp-controller="FoodService" asp-action="Index" asp-route-userId="@ViewBag.UserId" asp-route-pet_type="@pet.pettype" class="ps-next ps-next-food">
                   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7V6a6 6 0 0 1 12 0v1h3l-1.2 13.1A2 2 0 0 1 17.8 22H6.2a2 2 0 0 1-2-1.9L3 7h3Zm2 0h8V6a4 4 0 0 0-8 0v1Z"/></svg>
                   Buy food for me
                 </a>

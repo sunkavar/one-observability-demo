@@ -25,15 +25,7 @@ func MakeHTTPHandler(s Service, logger log.Logger) http.Handler {
 
 	r.Use(otelmux.Middleware("payforadoption",
 		otelmux.WithFilter(func(r *http.Request) bool {
-			switch r.URL.Path {
-			case "/health/status":
-				// instrumenting health check endpoint for application signals
-				return true
-			case "/metrics":
-				return false
-			default:
-				return true
-			}
+			return r.URL.Path != "/health/status" && r.URL.Path != "/metrics"
 		}),
 	))
 
@@ -51,14 +43,14 @@ func MakeHTTPHandler(s Service, logger log.Logger) http.Handler {
 		options...,
 	))
 
-	r.Methods("POST").Path("/api/completeadoption").Handler(httptransport.NewServer(
+	r.Methods("POST").Path("/adoptions").Handler(httptransport.NewServer(
 		e.CompleteAdoptionEndpoint,
 		decodeCompleteAdoptionRequest,
-		encodeResponse,
+		encodeCreatedResponse,
 		options...,
 	))
 
-	r.Methods("DELETE").Path("/api/cleanupadoptions/{userId}").Handler(httptransport.NewServer( // cSpell:ignore cleanupadoptions // cSpell:ignore cleanupadoptions // cSpell:ignore cleanupadoptions // cSpell:ignore cleanupadoptions
+	r.Methods("DELETE").Path("/adoptions").Handler(httptransport.NewServer(
 		e.CleanupAdoptionsEndpoint,
 		decodeCleanupAdoptionsRequest,
 		encodeEmptyResponse,
@@ -66,7 +58,7 @@ func MakeHTTPHandler(s Service, logger log.Logger) http.Handler {
 	))
 
 	// Trigger DDB seeding
-	r.Methods("POST").Path("/api/triggerseeding").Handler(httptransport.NewServer(
+	r.Methods("POST").Path("/admin/seed").Handler(httptransport.NewServer(
 		e.TriggerSeedingEndpoint,
 		decodeEmptyRequest,
 		encodeEmptyResponse,
@@ -99,24 +91,28 @@ func decodeEmptyRequest(_ context.Context, r *http.Request) (interface{}, error)
 
 func decodeCompleteAdoptionRequest(_ context.Context, r *http.Request) (interface{}, error) {
 
-	petId := r.URL.Query().Get("petId")
-	petType := r.URL.Query().Get("petType")
-	userID := r.URL.Query().Get("userId")
+	var body struct {
+		PetID   string `json:"pet_id"`
+		PetType string `json:"pet_type"`
+		UserID  string `json:"user_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		return nil, ErrBadRequest
+	}
 
-	if petId == "" || petType == "" || userID == "" {
+	if body.PetID == "" || body.PetType == "" || body.UserID == "" {
 		return nil, ErrBadRequest
 	}
 
 	return completeAdoptionRequest{
-		PetId:   petId,
-		PetType: petType,
-		UserID:  userID,
+		PetId:   body.PetID,
+		PetType: body.PetType,
+		UserID:  body.UserID,
 	}, nil
 }
 
 func decodeCleanupAdoptionsRequest(_ context.Context, r *http.Request) (interface{}, error) {
-	vars := mux.Vars(r)
-	userID := vars["userId"]
+	userID := r.URL.Query().Get("user_id")
 
 	if userID == "" {
 		return nil, ErrBadRequest
@@ -131,6 +127,16 @@ func encodeResponse(ctx context.Context, w http.ResponseWriter, response interfa
 		return nil
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	return json.NewEncoder(w).Encode(response)
+}
+
+func encodeCreatedResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
+	if e, ok := response.(errorer); ok && e.error() != nil {
+		encodeError(ctx, e.error(), w)
+		return nil
+	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusCreated)
 	return json.NewEncoder(w).Encode(response)
 }
 

@@ -30,7 +30,7 @@ namespace PetSite.Middleware
                 var userId = context.Request.Query["userId"].ToString();
                 var errorMessage = Uri.EscapeDataString(ex.Message);
 
-                var errorPath = $"/Home/Error?message={errorMessage}";
+                var errorPath = $"/error?message={errorMessage}";
                 if (!string.IsNullOrEmpty(userId))
                 {
                     errorPath += $"&userId={userId}";

@@ -55,9 +55,9 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/admin/setup-tables",
+              "raw": "{{baseUrl}}/admin/setup-tables",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "admin", "setup-tables"]
+              "path": ["admin", "setup-tables"]
             }
           },
           "response": []
@@ -73,9 +73,9 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/admin/seed",
+              "raw": "{{baseUrl}}/admin/seed",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "admin", "seed"]
+              "path": ["admin", "seed"]
             }
           },
           "response": []
@@ -91,9 +91,9 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/admin/cleanup",
+              "raw": "{{baseUrl}}/admin/cleanup",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "admin", "cleanup"]
+              "path": ["admin", "cleanup"]
             }
           },
           "response": []
@@ -113,9 +113,9 @@
               "raw": "{\n  \"food_for\": \"puppy\",\n  \"food_name\": \"Premium Puppy Chow\",\n  \"food_type\": \"dry\",\n  \"food_description\": \"High-quality dry food for puppies\",\n  \"food_price\": \"24.99\",\n  \"food_image\": \"premium-puppy-chow.jpg\",\n  \"nutritional_info\": {\n    \"calories_per_serving\": 350,\n    \"protein_percentage\": \"28.0\",\n    \"fat_percentage\": \"15.0\",\n    \"serving_size\": \"1 cup\"\n  },\n  \"ingredients\": [\"chicken\", \"rice\", \"vegetables\", \"vitamins\"],\n  \"feeding_guidelines\": \"Feed 2-3 times daily\",\n  \"stock_quantity\": 100\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/admin/foods",
+              "raw": "{{baseUrl}}/admin/foods",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "admin", "foods"]
+              "path": ["admin", "foods"]
             }
           },
           "response": []
@@ -135,9 +135,9 @@
               "raw": "{\n  \"food_price\": \"22.99\",\n  \"stock_quantity\": 75,\n  \"availability_status\": \"low_stock\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/admin/foods/{{foodId}}",
+              "raw": "{{baseUrl}}/admin/foods/{{foodId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "admin", "foods", "{{foodId}}"]
+              "path": ["admin", "foods", "{{foodId}}"]
             }
           },
           "response": []
@@ -148,9 +148,9 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/admin/foods/{{foodId}}",
+              "raw": "{{baseUrl}}/admin/foods/{{foodId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "admin", "foods", "{{foodId}}"]
+              "path": ["admin", "foods", "{{foodId}}"]
             }
           },
           "response": []
@@ -166,9 +166,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/foods",
+              "raw": "{{baseUrl}}/foods",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "foods"]
+              "path": ["foods"]
             }
           },
           "response": []
@@ -179,9 +179,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/foods?pet_type=puppy",
+              "raw": "{{baseUrl}}/foods?pet_type=puppy",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "foods"],
+              "path": ["foods"],
               "query": [
                 {
                   "key": "pet_type",
@@ -198,9 +198,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/foods?pet_type=kitten",
+              "raw": "{{baseUrl}}/foods?pet_type=kitten",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "foods"],
+              "path": ["foods"],
               "query": [
                 {
                   "key": "pet_type",
@@ -217,9 +217,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/foods?pet_type=bunny",
+              "raw": "{{baseUrl}}/foods?pet_type=bunny",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "foods"],
+              "path": ["foods"],
               "query": [
                 {
                   "key": "pet_type",
@@ -236,9 +236,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/foods?food_type=dry&max_price=15.00",
+              "raw": "{{baseUrl}}/foods?food_type=dry&max_price=15.00",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "foods"],
+              "path": ["foods"],
               "query": [
                 {
                   "key": "food_type",
@@ -259,66 +259,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/foods/{{foodId}}",
+              "raw": "{{baseUrl}}/foods/{{foodId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "foods", "{{foodId}}"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Create New Food",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"food_for\": \"puppy\",\n  \"food_name\": \"Premium Puppy Chow\",\n  \"food_type\": \"dry\",\n  \"food_description\": \"High-quality dry food for puppies\",\n  \"food_price\": \"24.99\",\n  \"food_image\": \"premium-puppy-chow.jpg\",\n  \"nutritional_info\": {\n    \"calories_per_serving\": 350,\n    \"protein_percentage\": \"28.0\",\n    \"fat_percentage\": \"15.0\",\n    \"serving_size\": \"1 cup\"\n  },\n  \"ingredients\": [\"chicken\", \"rice\", \"vegetables\", \"vitamins\"],\n  \"feeding_guidelines\": \"Feed 2-3 times daily\",\n  \"stock_quantity\": 100\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/foods",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "foods"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Update Food",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"food_price\": \"22.99\",\n  \"stock_quantity\": 75,\n  \"availability_status\": \"low_stock\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/foods/{{foodId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "foods", "{{foodId}}"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Delete Food",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/foods/{{foodId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "foods", "{{foodId}}"]
+              "path": ["foods", "{{foodId}}"]
             }
           },
           "response": []
@@ -334,9 +277,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/cart/{{userId}}",
+              "raw": "{{baseUrl}}/carts/{{userId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "cart", "{{userId}}"]
+              "path": ["carts", "{{userId}}"]
             }
           },
           "response": []
@@ -356,9 +299,9 @@
               "raw": "{\n  \"food_id\": \"F12345678\",\n  \"quantity\": 2\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/cart/{{userId}}/items",
+              "raw": "{{baseUrl}}/carts/{{userId}}/items",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "cart", "{{userId}}", "items"]
+              "path": ["carts", "{{userId}}", "items"]
             }
           },
           "response": []
@@ -378,9 +321,9 @@
               "raw": "{\n  \"food_id\": \"F23456789\",\n  \"quantity\": 1\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/cart/{{userId}}/items",
+              "raw": "{{baseUrl}}/carts/{{userId}}/items",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "cart", "{{userId}}", "items"]
+              "path": ["carts", "{{userId}}", "items"]
             }
           },
           "response": []
@@ -391,9 +334,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/cart/{{userId}}",
+              "raw": "{{baseUrl}}/carts/{{userId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "cart", "{{userId}}"]
+              "path": ["carts", "{{userId}}"]
             }
           },
           "response": []
@@ -413,9 +356,9 @@
               "raw": "{\n  \"quantity\": 5\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/cart/{{userId}}/items/F12345678",
+              "raw": "{{baseUrl}}/carts/{{userId}}/items/F12345678",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "cart", "{{userId}}", "items", "F12345678"]
+              "path": ["carts", "{{userId}}", "items", "F12345678"]
             }
           },
           "response": []
@@ -426,9 +369,9 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/cart/{{userId}}/items/F23456789",
+              "raw": "{{baseUrl}}/carts/{{userId}}/items/F23456789",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "cart", "{{userId}}", "items", "F23456789"]
+              "path": ["carts", "{{userId}}", "items", "F23456789"]
             }
           },
           "response": []
@@ -439,9 +382,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/cart/{{userId}}",
+              "raw": "{{baseUrl}}/carts/{{userId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "cart", "{{userId}}"]
+              "path": ["carts", "{{userId}}"]
             }
           },
           "response": []
@@ -449,12 +392,12 @@
         {
           "name": "Clear Cart",
           "request": {
-            "method": "POST",
+            "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/cart/{{userId}}/clear",
+              "raw": "{{baseUrl}}/carts/{{userId}}/items",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "cart", "{{userId}}", "clear"]
+              "path": ["carts", "{{userId}}", "items"]
             }
           },
           "response": []
@@ -465,9 +408,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/cart/{{userId}}",
+              "raw": "{{baseUrl}}/carts/{{userId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "cart", "{{userId}}"]
+              "path": ["carts", "{{userId}}"]
             }
           },
           "response": []
@@ -478,9 +421,9 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/cart/{{userId}}",
+              "raw": "{{baseUrl}}/carts/{{userId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "cart", "{{userId}}"]
+              "path": ["carts", "{{userId}}"]
             }
           },
           "response": []
@@ -496,9 +439,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/foods/F99999999",
+              "raw": "{{baseUrl}}/foods/F99999999",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "foods", "F99999999"]
+              "path": ["foods", "F99999999"]
             }
           },
           "response": []
@@ -518,9 +461,9 @@
               "raw": "{\n  \"food_id\": \"F99999999\",\n  \"quantity\": 1\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/cart/{{userId}}/items",
+              "raw": "{{baseUrl}}/carts/{{userId}}/items",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "cart", "{{userId}}", "items"]
+              "path": ["carts", "{{userId}}", "items"]
             }
           },
           "response": []
@@ -540,9 +483,9 @@
               "raw": "{\n  \"food_for\": \"invalid_pet\",\n  \"food_name\": \"\",\n  \"food_type\": \"invalid_type\",\n  \"food_description\": \"\",\n  \"food_price\": \"-5.00\",\n  \"food_image\": \"\",\n  \"ingredients\": [],\n  \"stock_quantity\": 0\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/admin/foods",
+              "raw": "{{baseUrl}}/admin/foods",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "admin", "foods"]
+              "path": ["admin", "foods"]
             }
           },
           "response": []
@@ -555,18 +498,14 @@
       "listen": "prerequest",
       "script": {
         "type": "text/javascript",
-        "exec": [
-          ""
-        ]
+        "exec": [""]
       }
     },
     {
       "listen": "test",
       "script": {
         "type": "text/javascript",
-        "exec": [
-          ""
-        ]
+        "exec": [""]
       }
     }
   ]

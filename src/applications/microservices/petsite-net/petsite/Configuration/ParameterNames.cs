@@ -7,7 +7,6 @@ namespace PetSite.Configuration
     public static class ParameterNames
     {
         // Environment Variable Names for parameter names (all caps)
-        public const string PET_HISTORY_URL = "PET_HISTORY_URL_PARAM_NAME";
         public const string PET_LIST_ADOPTIONS_URL = "PET_LIST_ADOPTIONS_URL_PARAM_NAME";
         public const string CLEANUP_ADOPTIONS_URL = "CLEANUP_ADOPTIONS_URL_PARAM_NAME";
         public const string PAYMENT_API_URL = "PAYMENT_API_URL_PARAM_NAME";

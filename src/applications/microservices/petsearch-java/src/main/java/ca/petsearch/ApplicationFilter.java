@@ -4,6 +4,7 @@ SPDX-License-Identifier: Apache-2.0
 */
 package ca.petsearch;
 
+import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 
 import javax.servlet.*;
@@ -34,10 +35,12 @@ public class ApplicationFilter implements Filter {
 
         String statusCode = String.valueOf(((HttpServletResponse)response).getStatus());
 
-        metricEmitter.emitReturnTimeMetric(
-                System.currentTimeMillis() - requestStartTime, ((HttpServletRequest)request).getServletPath(), statusCode);
+        // Route template, not the raw path, so /pets/{pet_id} does not create one metric series per pet.
+        Object route = request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
+        String apiName = route != null ? route.toString() : ((HttpServletRequest)request).getServletPath();
 
+        metricEmitter.emitReturnTimeMetric(System.currentTimeMillis() - requestStartTime, apiName, statusCode);
 
-        metricEmitter.emitBytesSentMetric(loadSize, ((HttpServletRequest)request).getServletPath(), statusCode);
+        metricEmitter.emitBytesSentMetric(loadSize, apiName, statusCode);
     }
 }

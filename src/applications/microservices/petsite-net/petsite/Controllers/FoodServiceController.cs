@@ -30,8 +30,8 @@ namespace PetSite.Controllers
             _refreshManager = refreshManager;
         }
 
-        [HttpGet]
-        public async Task<IActionResult> Index([FromQuery] string userId, string petType)
+        [HttpGet("/foods")]
+        public async Task<IActionResult> Index([FromQuery] string userId, [FromQuery(Name = "pet_type")] string petType)
         {
             if (EnsureUserId()) return new EmptyResult();
 
@@ -41,7 +41,7 @@ namespace PetSite.Controllers
             {
                 using var httpClient = _httpClientFactory.CreateClient();
                 var foodApiUrl = await ParameterNames.GetParameterValueAsync(ParameterNames.FOOD_API_URL, _refreshManager);
-                var url = UrlHelper.BuildUrl(foodApiUrl, null, ("pettype", petType));
+                var url = UrlHelper.BuildUrl(foodApiUrl, null, ("pet_type", petType));
                 var response = await httpClient.GetAsync(url);
                 response.EnsureSuccessStatusCode();
 
@@ -63,8 +63,8 @@ namespace PetSite.Controllers
 
         }
 
-        [HttpPost]
-        public async Task<IActionResult> AddToCart(string foodId, string userId)
+        [HttpPost("/cart/items")]
+        public async Task<IActionResult> AddToCart([FromForm(Name = "food_id")] string foodId, string userId)
         {
             if (userId == null)
             {
@@ -99,7 +99,7 @@ namespace PetSite.Controllers
             }
         }
 
-        [HttpGet]
+        [HttpGet("/cart/count")]
         public async Task<IActionResult> GetCartCount(string userId)
         {
             var totalItems = await GetCartItemCountAsync(userId);

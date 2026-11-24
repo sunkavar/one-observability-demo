@@ -85,7 +85,7 @@ export class PetSearchService extends EcsService {
         if (properties.enableSLO) {
             new CfnServiceLevelObjective(this, 'PetSearchApiSearchSLO', {
                 name: 'PetSearchApiSearchSLO',
-                description: 'SLO for /api/search GET endpoint latency <= 8000ms',
+                description: 'SLO for /pets GET endpoint latency <= 8000ms',
                 sli: {
                     sliMetric: {
                         keyAttributes: {
@@ -93,7 +93,7 @@ export class PetSearchService extends EcsService {
                             Name: 'petsearch-api-java',
                             Environment: 'ecs:PetsiteECS-cluster',
                         },
-                        operationName: 'GET /api/search',
+                        operationName: 'GET /pets',
                         metricType: 'LATENCY',
                         periodSeconds: 60,
                     },
@@ -190,7 +190,7 @@ export class PetSearchService extends EcsService {
                 PARAMETER_STORE_PREFIX,
                 new Map(
                     Object.entries({
-                        [SSM_PARAMETER_NAMES.SEARCH_API_URL]: `http://${this.loadBalancedService?.loadBalancer.loadBalancerDnsName}/api/search?`,
+                        [SSM_PARAMETER_NAMES.SEARCH_API_URL]: `http://${this.loadBalancedService?.loadBalancer.loadBalancerDnsName}/pets`,
                     }),
                 ),
             );

@@ -55,9 +55,8 @@
                             <div class="form-group mb-3">
                                 <form asp-controller="Payment" asp-action="MakePayment" method="post">
                                     <input class="btn btn-success btn-lg btn-block" type="submit" value="Pay and Adopt" />
-                                    <input type="hidden" asp-for="@Model.petid" name="petid" />
-                                    <input type="hidden" asp-for="@Model.pettype" name="pettype" />
-                                    <input type="hidden" asp-for="@Model.peturl" name="peturl" />
+                                    <input type="hidden" asp-for="@Model.petid" name="pet_id" />
+                                    <input type="hidden" asp-for="@Model.pettype" name="pet_type" />
                                     <input type="hidden" name="userId" value="@ViewBag.UserId" />
                                 </form>
                             </div>

@@ -78,30 +78,25 @@ Integrates with **OpenTelemetry** and **AWS X-Ray**:
 **Example Trace Structure:**
 ```
 Trace ID: abc123...
-├── Span: GET /api/foods
-│   ├── span_id: 1a2b3c4d5e6f7890
-│   ├── method: GET
-│   ├── uri: /api/foods?pettype=puppy
+├── Span: GET /foods (server span from the HTTP middleware)
+│   ├── http.route: /foods
+│   ├── http.url: /foods?pet_type=puppy
 │   ├── user_agent: Mozilla/5.0...
-│   └── Span: list_foods
-│       ├── pet_type: puppy
-│       └── Span: find_by_pet_type
-│           ├── operation: query
-│           ├── table: PetFoods
-│           ├── index: PetTypeIndex
-│           └── duration: 45ms
+│   └── Span: list_foods (FoodService)
+│       ├── filters: pet_type=puppy
+│       └── Span: find_all (repository)
+│           └── table: PetFoods
 ```
+
+`GET /health/status` and `/metrics` are not traced. Cart routes carry `user.id` on the server span, read from the `{user_id}` path segment.
 
 #### 4. Automatic Instrumentation
 
-Throughout the codebase, functions are automatically instrumented using the `#[instrument]` macro:
+Service and repository functions are instrumented with the `#[instrument]` macro. HTTP handlers are not, because the HTTP middleware already creates the server span for each request:
 
 ```rust
-#[instrument(skip(state))]
-pub async fn list_foods(
-    State(state): State<ApiState>,
-    Query(query): Query<ListFoodsQuery>,
-) -> Result<Json<FoodListResponse>, (StatusCode, Json<Value>)>
+#[instrument(skip(self, user_id), fields(user.id = %user_id))]
+pub async fn get_cart(&self, user_id: &str) -> ServiceResult<CartResponse>
 ```
 
 This automatically:
@@ -109,6 +104,8 @@ This automatically:
 - Captures function parameters (except sensitive data)
 - Tracks function execution time
 - Propagates trace context across async boundaries
+
+`BusinessTracingMiddleware` and `DatabaseTracingMiddleware` wrappers (`trace_operation`, `trace_cart_operation`, `trace_food_operation`) record metrics and logs without creating spans.
 
 #### 5. Specialized Tracing Middleware
 
@@ -268,21 +265,24 @@ The service provides a health check endpoint at `/health/status`.
 ### Health
 - `GET /health/status` - Health check endpoint
 
-### Food Management (Coming Soon)
-- `GET /api/foods` - List all foods
-- `GET /api/foods/{food_id}` - Get specific food details
-- `POST /api/foods` - Create new food (admin)
-- `PUT /api/foods/{food_id}` - Update food (admin)
-- `DELETE /api/foods/{food_id}` - Delete food (admin)
+### Foods
+- `GET /foods?pet_type=` - List foods, optional filters
+- `GET /foods/{food_id}` - Get specific food details
 
-### Recommendations (Coming Soon)
-- `GET /api/recommendations/{pet_type}` - Get recommendations for pet type
+### Carts
+- `GET /carts/{user_id}` - Get user's cart
+- `DELETE /carts/{user_id}` - Delete user's cart
+- `POST /carts/{user_id}/items` - Add item to cart
+- `DELETE /carts/{user_id}/items` - Remove all items from cart
+- `PUT /carts/{user_id}/items/{food_id}` - Update cart item
+- `DELETE /carts/{user_id}/items/{food_id}` - Remove cart item
+- `POST /carts/{user_id}/checkout` - Check out cart
 
-### Shopping Cart (Coming Soon)
-- `GET /api/cart/{user_id}` - Get user's cart
-- `POST /api/cart/{user_id}/items` - Add item to cart
-- `PUT /api/cart/{user_id}/items/{food_id}` - Update cart item
-- `DELETE /api/cart/{user_id}/items/{food_id}` - Remove cart item
+### Admin
+- `POST /admin/setup-tables`, `POST /admin/seed`, `POST /admin/cleanup`
+- `POST /admin/foods` - Create food
+- `PUT /admin/foods/{food_id}` - Update food
+- `DELETE /admin/foods/{food_id}` - Delete food
 
 ## Development
 

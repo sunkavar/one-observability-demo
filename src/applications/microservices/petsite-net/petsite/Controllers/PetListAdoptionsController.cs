@@ -35,7 +35,7 @@ namespace PetSite.Controllers
             _refreshManager = refreshManager;
         }
 
-        // GET
+        [HttpGet("/adoptions")]
         public async Task<IActionResult> Index()
         {
             if (EnsureUserId()) return new EmptyResult();
@@ -58,7 +58,6 @@ namespace PetSite.Controllers
                     string petlistadoptionsurl = await ParameterNames.GetParameterValueAsync(ParameterNames.PET_LIST_ADOPTIONS_URL, _refreshManager);
                     using var httpClient = _httpClientFactory.CreateClient();
                     var userId = ViewBag.UserId?.ToString();
-                    //var url = UrlHelper.BuildUrl(petlistadoptionsurl, null, ("userId",userId));
                     _logger.LogInformation($"Calling PetListAdoptions API for user: {userId} at: {petlistadoptionsurl}");
                     result = await httpClient.GetStringAsync(petlistadoptionsurl);
                     Pets = JsonSerializer.Deserialize<List<AdoptedPet>>(result);

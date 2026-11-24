@@ -364,6 +364,7 @@ export class MicroservicesStack extends Stack {
                             OTEL_PROPAGATORS: 'xray',
                             OTEL_PYTHON_CONFIGURATOR: 'aws_configurator',
                             OTEL_PYTHON_DISTRO: 'aws_distro',
+                            OTEL_PYTHON_FASTAPI_EXCLUDED_URLS: '/health/status,/metrics',
                         },
                         enableSLO: CUSTOM_ENABLE_SLO,
                     });

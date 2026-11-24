@@ -88,18 +88,21 @@ def search_pets(
     petid: str | None = None,
     user_id: str | None = None,
 ) -> Any:
-    """Return pets matching the given type/color/id filters."""
+    """Return pets matching the type/color filters, or the single pet for `petid`."""
+    base = config.backend_url("SEARCH_API_URL")
+    user_params = {"user_id": user_id} if user_id else None
+    if petid:
+        return _get(base, "pet-search", f"/pets/{petid}", user_params)
     params = {
-        "pettype": normalize_pet_type(pettype) or "",
-        "petcolor": normalize_pet_color(petcolor) or "",
-        "petid": petid or "",
-        "userId": user_id or "",
+        "pet_type": normalize_pet_type(pettype),
+        "pet_color": normalize_pet_color(petcolor),
+        "user_id": user_id,
     }
     return _get(
-        config.backend_url("SEARCH_API_URL"),
+        base,
         "pet-search",
-        "/api/search",
-        params,
+        "/pets",
+        {k: v for k, v in params.items() if v},
     )
 
 
@@ -132,14 +135,14 @@ def _with_image_url(payload: Any) -> Any:
 def list_foods() -> Any:
     """Return the full pet-food catalog (each item gains an absolute `image_url`)."""
     return _with_image_url(
-        _get(config.backend_url("PETFOOD_API_URL"), "petfood", "/api/foods"),
+        _get(config.backend_url("PETFOOD_API_URL"), "petfood", "/foods"),
     )
 
 
 def get_food(food_id: str) -> Any:
     """Return details for a single food item (with an absolute `image_url`)."""
     return _with_image_url(
-        _get(config.backend_url("PETFOOD_API_URL"), "petfood", f"/api/foods/{food_id}"),
+        _get(config.backend_url("PETFOOD_API_URL"), "petfood", f"/foods/{food_id}"),
     )
 
 
@@ -148,7 +151,7 @@ def get_cart(user_id: str) -> Any:
     return _get(
         config.backend_url("PETFOOD_CART_URL"),
         "petfood-cart",
-        f"/api/cart/{user_id}",
+        f"/carts/{user_id}",
     )
 
 
@@ -157,7 +160,7 @@ def add_to_cart(user_id: str, food_id: str, quantity: int = 1) -> Any:
     return _post(
         config.backend_url("PETFOOD_CART_URL"),
         "petfood-cart",
-        f"/api/cart/{user_id}/items",
+        f"/carts/{user_id}/items",
         json_body={"food_id": food_id, "quantity": quantity},
     )
 
@@ -172,7 +175,7 @@ def checkout(user_id: str, email: str | None = None) -> Any:
     return _post(
         config.backend_url("PETFOOD_CART_URL"),
         "petfood-cart",
-        f"/api/cart/{user_id}/checkout",
+        f"/carts/{user_id}/checkout",
         json_body=body,
     )
 
@@ -183,20 +186,20 @@ def list_recent_adoptions() -> Any:
     return _get(
         config.backend_url("ADOPTIONLIST_API_URL"),
         "petlistadoptions",
-        "/api/adoptionlist/",
+        "/adoptions",
     )
 
 
 def complete_adoption(pet_id: str, pet_type: str, user_id: str) -> Any:
     """Complete an adoption for the given pet on behalf of the user."""
-    params = {
-        "petId": pet_id,
-        "petType": normalize_pet_type(pet_type),
-        "userId": user_id,
+    body = {
+        "pet_id": pet_id,
+        "pet_type": normalize_pet_type(pet_type),
+        "user_id": user_id,
     }
     return _post(
         config.backend_url("PAYFORADOPTION_API_URL"),
         "payforadoption",
-        "/api/completeadoption",
-        params=params,
+        "/adoptions",
+        json_body=body,
     )

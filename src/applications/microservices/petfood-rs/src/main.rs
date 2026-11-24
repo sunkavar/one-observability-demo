@@ -229,27 +229,29 @@ fn create_app(
         // Health endpoint
         .route("/health/status", get(health_check))
         // API endpoints (with API state) - read-only food endpoints
-        .route("/api/foods", get(api::list_foods))
-        .route("/api/foods/:food_id", get(api::get_food))
+        .route("/foods", get(api::list_foods))
+        .route("/foods/{food_id}", get(api::get_food))
         .route(
-            "/api/cart/:user_id",
+            "/carts/{user_id}",
             get(api::get_cart).delete(api::delete_cart),
         )
-        .route("/api/cart/:user_id/items", post(api::add_cart_item))
         .route(
-            "/api/cart/:user_id/items/:food_id",
+            "/carts/{user_id}/items",
+            post(api::add_cart_item).delete(api::clear_cart),
+        )
+        .route(
+            "/carts/{user_id}/items/{food_id}",
             put(api::update_cart_item).delete(api::remove_cart_item),
         )
-        .route("/api/cart/:user_id/clear", post(api::clear_cart))
-        .route("/api/cart/:user_id/checkout", post(api::checkout_cart))
+        .route("/carts/{user_id}/checkout", post(api::checkout_cart))
         .with_state(api_state)
         // Admin endpoints (with admin state)
-        .route("/api/admin/setup-tables", post(admin::setup_tables))
-        .route("/api/admin/seed", post(admin::seed_database))
-        .route("/api/admin/cleanup", post(admin::cleanup_database))
-        .route("/api/admin/foods", post(admin::create_food))
+        .route("/admin/setup-tables", post(admin::setup_tables))
+        .route("/admin/seed", post(admin::seed_database))
+        .route("/admin/cleanup", post(admin::cleanup_database))
+        .route("/admin/foods", post(admin::create_food))
         .route(
-            "/api/admin/foods/:food_id",
+            "/admin/foods/{food_id}",
             put(admin::update_food).delete(admin::delete_food),
         )
         .with_state(admin_state)

@@ -176,7 +176,7 @@ These were discovered during actual deployment and are not obvious from reading 
 - **Actual pipeline stages differ from §6.** The live pipeline has **7 stages** (not the 5 described in the architecture): `Source → Build → UpdatePipeline → Assets → Core → Backend → Microservices`. The "Containers" stage is embedded in `Assets`, and Storage+Compute are merged into `Backend`.
 - **Stack deletion fails on `rCleanupMonitor`.** If the deployment fails before any CDK application stacks are created, deleting the main CloudFormation stack fails because `rCleanupMonitor` (a custom resource) tries to run a Step Function that deletes non-existent CDK stacks. **Fix:** `aws cloudformation delete-stack --retain-resources rCleanupMonitor --stack-name <stack>`.
 - **Full deployment timing.** Production deploy (CloudFormation → CodeBuild → CDK Pipeline) takes ~40–50 minutes total: ~2 min for CFN resources, ~5 min for CodeBuild pre_build (clone + bootstrap), ~5 min for CDK synth+deploy of the pipeline stack, ~30 min for the pipeline stages (Core, Backend, Microservices).
-- **Application URL is CloudFront, not ALB.** The PetSite is served via CloudFront (not directly via ALB). The URL is in stack output `oPetSiteUrl` and CloudFormation export `public:WorkshopPetSiteUrl`. It redirects to `/?userId=<random>` for traffic tracking/RUM.
+- **Application URL is CloudFront, not ALB.** The PetSite is served via CloudFront (not directly via ALB). The URL is in stack output `oPetSiteUrl` and CloudFormation export `public:WorkshopPetSiteUrl`. It redirects to `/pets?userId=<random>` for traffic tracking/RUM.
 
 ## Maintenance
 

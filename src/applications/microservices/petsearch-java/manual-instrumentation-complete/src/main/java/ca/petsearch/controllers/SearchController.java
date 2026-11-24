@@ -24,7 +24,9 @@ import io.opentelemetry.context.Scope;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -193,55 +195,42 @@ public class SearchController {
     }
 
 
-    /**
-     * Create SearchQuery object with parameter alias resolution
-     * Similar to petfood Rust application's serde alias handling
-     */
-    private SearchQuery createSearchQuery(String petType, String petTypeAlias,
-                                        String petColor, String petColorAlias,
-                                        String petId, String petIdAlias) {
-        // Resolve parameter aliases - primary names take precedence over aliases
-        String resolvedPetType = !SearchQuery.isEmptyParameter(petType) ? petType : petTypeAlias;
-        String resolvedPetColor = !SearchQuery.isEmptyParameter(petColor) ? petColor : petColorAlias;
-        String resolvedPetId = !SearchQuery.isEmptyParameter(petId) ? petId : petIdAlias;
-
-        return new SearchQuery(resolvedPetType, resolvedPetColor, resolvedPetId);
+    @GetMapping("/pets")
+    public List<Pet> listPets(
+            @RequestParam(name = "pet_type", defaultValue = "", required = false) String petType,
+            @RequestParam(name = "pet_color", defaultValue = "", required = false) String petColor,
+            @RequestParam(name = "user_id", defaultValue = "", required = false) String userId
+    ) throws InterruptedException {
+        return scanPets(new SearchQuery(petType, petColor, ""), userId);
     }
 
-    @GetMapping("/api/search")
-    public List<Pet> search(
-            @RequestParam(name = "pettype", defaultValue = "", required = false) String petType,
-            @RequestParam(name = "pet_type", defaultValue = "", required = false) String petTypeAlias,
-            @RequestParam(name = "petcolor", defaultValue = "", required = false) String petColor,
-            @RequestParam(name = "pet_color", defaultValue = "", required = false) String petColorAlias,
-            @RequestParam(name = "petid", defaultValue = "", required = false) String petId,
-            @RequestParam(name = "pet_id", defaultValue = "", required = false) String petIdAlias,
-            @RequestParam(name = "userId", defaultValue = "", required = false) String userId,
-            @RequestParam(name = "user_id", defaultValue = "", required = false) String userIdAlias
+    @GetMapping("/pets/{pet_id}")
+    public ResponseEntity<Pet> getPet(
+            @PathVariable("pet_id") String petId,
+            @RequestParam(name = "user_id", defaultValue = "", required = false) String userId
     ) throws InterruptedException {
+        List<Pet> result = scanPets(new SearchQuery("", "", petId), userId);
+        return result.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(result.get(0));
+    }
 
-        // Create SearchQuery object with parameter resolution (similar to petfood Rust serde aliases)
-        SearchQuery query = createSearchQuery(petType, petTypeAlias, petColor, petColorAlias, petId, petIdAlias);
-
+    private List<Pet> scanPets(SearchQuery query, String userId) throws InterruptedException {
         Span span = tracer.spanBuilder("Scanning DynamoDB Table").startSpan();
 
-        // Use validated parameters from SearchQuery
         String validatedPetType = query.getValidatedPetType();
         String normalizedPetColor = query.getNormalizedPetColor();
         String normalizedPetId = query.getNormalizedPetId();
 
-        // This line is intentional. Delays searches
-        if (!SearchQuery.isEmptyParameter(validatedPetType) && validatedPetType.equals("bunny")) {
-            logger.debug("Delaying the response on purpose, to show on traces as an issue");
-            TimeUnit.MILLISECONDS.sleep(3000);
-        }
-
         try(Scope scope = span.makeCurrent()) {
-            // Log the resolved parameters for tracing
+            // This line is intentional. Delays searches
+            if (validatedPetType.equals("bunny")) {
+                logger.debug("Delaying the response on purpose, to show on traces as an issue");
+                TimeUnit.MILLISECONDS.sleep(3000);
+            }
+
             span.setAttribute("search.pettype", validatedPetType);
             span.setAttribute("search.petcolor", normalizedPetColor);
             span.setAttribute("search.petid", normalizedPetId);
-            span.setAttribute("user.id", userId.isEmpty() ? userIdAlias : userId);
+            span.setAttribute("user.id", userId);
 
             List<Pet> result = ddbClient.scan(
                     buildScanRequest(validatedPetType, normalizedPetColor, normalizedPetId))
@@ -257,7 +246,6 @@ public class SearchController {
         } finally {
             span.end();
         }
-
     }
 
     private ScanRequest buildScanRequest(String petType, String petColor, String petId) {

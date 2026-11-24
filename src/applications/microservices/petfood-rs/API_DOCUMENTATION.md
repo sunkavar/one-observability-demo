@@ -66,13 +66,13 @@ curl -X GET http://localhost:8080/health/status
 
 ### 1. Setup Database Tables
 
-**Endpoint**: `POST /api/admin/setup-tables`
+**Endpoint**: `POST /admin/setup-tables`
 
 **Description**: Create the required DynamoDB tables (foods and carts).
 
 **Request**:
 ```bash
-curl -X POST http://localhost:8080/api/admin/setup-tables \
+curl -X POST http://localhost:8080/admin/setup-tables \
   -H "Content-Type: application/json"
 ```
 
@@ -87,13 +87,13 @@ curl -X POST http://localhost:8080/api/admin/setup-tables \
 
 ### 2. Seed Database with Sample Data
 
-**Endpoint**: `POST /api/admin/seed`
+**Endpoint**: `POST /admin/seed`
 
 **Description**: Populate the database with sample food products for all pet types.
 
 **Request**:
 ```bash
-curl -X POST http://localhost:8080/api/admin/seed \
+curl -X POST http://localhost:8080/admin/seed \
   -H "Content-Type: application/json"
 ```
 
@@ -108,13 +108,13 @@ curl -X POST http://localhost:8080/api/admin/seed \
 
 ### 3. Cleanup Database
 
-**Endpoint**: `POST /api/admin/cleanup`
+**Endpoint**: `POST /admin/cleanup`
 
 **Description**: Remove all food products from the database.
 
 **Request**:
 ```bash
-curl -X POST http://localhost:8080/api/admin/cleanup \
+curl -X POST http://localhost:8080/admin/cleanup \
   -H "Content-Type: application/json"
 ```
 
@@ -133,7 +133,7 @@ curl -X POST http://localhost:8080/api/admin/cleanup \
 
 ### 1. List All Foods
 
-**Endpoint**: `GET /api/foods`
+**Endpoint**: `GET /foods`
 
 **Description**: Retrieve all food products with optional filtering.
 
@@ -148,13 +148,13 @@ curl -X POST http://localhost:8080/api/admin/cleanup \
 **Request**:
 ```bash
 # Get all foods
-curl -X GET http://localhost:8080/api/foods
+curl -X GET http://localhost:8080/foods
 
 # Get puppy foods only
-curl -X GET "http://localhost:8080/api/foods?pet_type=puppy"
+curl -X GET "http://localhost:8080/foods?pet_type=puppy"
 
 # Get dry foods under $15
-curl -X GET "http://localhost:8080/api/foods?food_type=dry&max_price=15.00"
+curl -X GET "http://localhost:8080/foods?food_type=dry&max_price=15.00"
 ```
 
 **Response**:
@@ -187,13 +187,13 @@ curl -X GET "http://localhost:8080/api/foods?food_type=dry&max_price=15.00"
 
 ### 2. Get Specific Food
 
-**Endpoint**: `GET /api/foods/{food_id}`
+**Endpoint**: `GET /foods/{food_id}`
 
 **Description**: Retrieve details for a specific food product.
 
 **Request**:
 ```bash
-curl -X GET http://localhost:8080/api/foods/F12345678
+curl -X GET http://localhost:8080/foods/F12345678
 ```
 
 **Response**:
@@ -219,7 +219,7 @@ curl -X GET http://localhost:8080/api/foods/F12345678
 
 ### 3. Create New Food (Admin Only)
 
-**Endpoint**: `POST /api/admin/foods`
+**Endpoint**: `POST /admin/foods`
 
 **Description**: Create a new food product. This is an admin-only operation.
 
@@ -227,7 +227,7 @@ curl -X GET http://localhost:8080/api/foods/F12345678
 
 **Request**:
 ```bash
-curl -X POST http://localhost:8080/api/admin/foods \
+curl -X POST http://localhost:8080/admin/foods \
   -H "Content-Type: application/json" \
   -d '{
     "pet_type": "puppy",
@@ -280,13 +280,13 @@ curl -X POST http://localhost:8080/api/admin/foods \
 
 ### 4. Update Food (Admin Only)
 
-**Endpoint**: `PUT /api/admin/foods/{food_id}`
+**Endpoint**: `PUT /admin/foods/{food_id}`
 
 **Description**: Update an existing food product. All fields are optional. This is an admin-only operation.
 
 **Request**:
 ```bash
-curl -X PUT http://localhost:8080/api/admin/foods/F87654321 \
+curl -X PUT http://localhost:8080/admin/foods/F87654321 \
   -H "Content-Type: application/json" \
   -d '{
     "price": "22.99",
@@ -323,13 +323,13 @@ curl -X PUT http://localhost:8080/api/admin/foods/F87654321 \
 
 ### 5. Delete Food (Admin Only)
 
-**Endpoint**: `DELETE /api/admin/foods/{food_id}`
+**Endpoint**: `DELETE /admin/foods/{food_id}`
 
 **Description**: Soft delete a food product (marks as inactive). This is an admin-only operation.
 
 **Request**:
 ```bash
-curl -X DELETE http://localhost:8080/api/admin/foods/F87654321
+curl -X DELETE http://localhost:8080/admin/foods/F87654321
 ```
 
 **Response** (Status: 204 No Content):
@@ -343,13 +343,13 @@ curl -X DELETE http://localhost:8080/api/admin/foods/F87654321
 
 ### 1. Get User's Cart
 
-**Endpoint**: `GET /api/cart/{user_id}`
+**Endpoint**: `GET /carts/{user_id}`
 
 **Description**: Retrieve the shopping cart for a specific user.
 
 **Request**:
 ```bash
-curl -X GET http://localhost:8080/api/cart/user001
+curl -X GET http://localhost:8080/carts/user001
 ```
 
 **Response** (Empty Cart):
@@ -366,13 +366,13 @@ curl -X GET http://localhost:8080/api/cart/user001
 
 ### 2. Add Item to Cart
 
-**Endpoint**: `POST /api/cart/{user_id}/items`
+**Endpoint**: `POST /carts/{user_id}/items`
 
 **Description**: Add a food item to the user's cart.
 
 **Request**:
 ```bash
-curl -X POST http://localhost:8080/api/cart/user001/items \
+curl -X POST http://localhost:8080/carts/user001/items \
   -H "Content-Type: application/json" \
   -d '{
     "food_id": "F12345678",
@@ -398,7 +398,7 @@ curl -X POST http://localhost:8080/api/cart/user001/items \
 
 **Request**:
 ```bash
-curl -X GET http://localhost:8080/api/cart/user001
+curl -X GET http://localhost:8080/carts/user001
 ```
 
 **Response**:
@@ -426,13 +426,13 @@ curl -X GET http://localhost:8080/api/cart/user001
 
 ### 4. Update Cart Item Quantity
 
-**Endpoint**: `PUT /api/cart/{user_id}/items/{food_id}`
+**Endpoint**: `PUT /carts/{user_id}/items/{food_id}`
 
 **Description**: Update the quantity of a specific item in the cart.
 
 **Request**:
 ```bash
-curl -X PUT http://localhost:8080/api/cart/user001/items/F12345678 \
+curl -X PUT http://localhost:8080/carts/user001/items/F12345678 \
   -H "Content-Type: application/json" \
   -d '{
     "quantity": 5
@@ -455,13 +455,13 @@ curl -X PUT http://localhost:8080/api/cart/user001/items/F12345678 \
 
 ### 5. Remove Item from Cart
 
-**Endpoint**: `DELETE /api/cart/{user_id}/items/{food_id}`
+**Endpoint**: `DELETE /carts/{user_id}/items/{food_id}`
 
 **Description**: Remove a specific item from the cart.
 
 **Request**:
 ```bash
-curl -X DELETE http://localhost:8080/api/cart/user001/items/F12345678
+curl -X DELETE http://localhost:8080/carts/user001/items/F12345678
 ```
 
 **Response** (Status: 204 No Content):
@@ -471,13 +471,13 @@ curl -X DELETE http://localhost:8080/api/cart/user001/items/F12345678
 
 ### 6. Clear Cart
 
-**Endpoint**: `POST /api/cart/{user_id}/clear`
+**Endpoint**: `DELETE /carts/{user_id}/items`
 
 **Description**: Remove all items from the cart.
 
 **Request**:
 ```bash
-curl -X POST http://localhost:8080/api/cart/user001/clear
+curl -X DELETE http://localhost:8080/carts/user001/items
 ```
 
 **Response** (Status: 204 No Content):
@@ -487,13 +487,13 @@ curl -X POST http://localhost:8080/api/cart/user001/clear
 
 ### 7. Checkout Cart
 
-**Endpoint**: `POST /api/cart/{user_id}/checkout`
+**Endpoint**: `POST /carts/{user_id}/checkout`
 
 **Description**: Process checkout for the user's cart and create an order.
 
 **Request**:
 ```bash
-curl -X POST http://localhost:8080/api/cart/user001/checkout \
+curl -X POST http://localhost:8080/carts/user001/checkout \
   -H "Content-Type: application/json" \
   -d '{
     "payment_method": {
@@ -551,13 +551,13 @@ curl -X POST http://localhost:8080/api/cart/user001/checkout \
 
 ### 8. Delete Cart
 
-**Endpoint**: `DELETE /api/cart/{user_id}`
+**Endpoint**: `DELETE /carts/{user_id}`
 
 **Description**: Delete the entire cart for a user.
 
 **Request**:
 ```bash
-curl -X DELETE http://localhost:8080/api/cart/user001
+curl -X DELETE http://localhost:8080/carts/user001
 ```
 
 **Response** (Status: 204 No Content):
@@ -578,33 +578,33 @@ Here's a complete end-to-end example showing a typical user journey with `user00
 curl -X GET http://localhost:8080/health/status
 
 # 2. Setup database tables
-curl -X POST http://localhost:8080/api/admin/setup-tables
+curl -X POST http://localhost:8080/admin/setup-tables
 
 # 3. Seed with sample data
-curl -X POST http://localhost:8080/api/admin/seed
+curl -X POST http://localhost:8080/admin/seed
 ```
 
 ### Step 2: Browse Products
 
 ```bash
 # 1. Get all available foods
-curl -X GET http://localhost:8080/api/foods
+curl -X GET http://localhost:8080/foods
 
 # 2. Get puppy foods using filtering
-curl -X GET "http://localhost:8080/api/foods?pet_type=puppy"
+curl -X GET "http://localhost:8080/foods?pet_type=puppy"
 
 # 3. Search for dry foods under $15
-curl -X GET "http://localhost:8080/api/foods?food_type=dry&max_price=15.00"
+curl -X GET "http://localhost:8080/foods?food_type=dry&max_price=15.00"
 ```
 
 ### Step 3: Shopping Cart Operations
 
 ```bash
 # 1. Check initial cart (should be empty)
-curl -X GET http://localhost:8080/api/cart/user001
+curl -X GET http://localhost:8080/carts/user001
 
 # 2. Add puppy kibble to cart
-curl -X POST http://localhost:8080/api/cart/user001/items \
+curl -X POST http://localhost:8080/carts/user001/items \
   -H "Content-Type: application/json" \
   -d '{
     "food_id": "F12345678",
@@ -612,7 +612,7 @@ curl -X POST http://localhost:8080/api/cart/user001/items \
   }'
 
 # 3. Add puppy treats to cart
-curl -X POST http://localhost:8080/api/cart/user001/items \
+curl -X POST http://localhost:8080/carts/user001/items \
   -H "Content-Type: application/json" \
   -d '{
     "food_id": "F34567890",
@@ -620,23 +620,23 @@ curl -X POST http://localhost:8080/api/cart/user001/items \
   }'
 
 # 4. Check cart contents
-curl -X GET http://localhost:8080/api/cart/user001
+curl -X GET http://localhost:8080/carts/user001
 
 # 5. Update kibble quantity
-curl -X PUT http://localhost:8080/api/cart/user001/items/F12345678 \
+curl -X PUT http://localhost:8080/carts/user001/items/F12345678 \
   -H "Content-Type: application/json" \
   -d '{
     "quantity": 3
   }'
 
 # 6. Remove treats from cart
-curl -X DELETE http://localhost:8080/api/cart/user001/items/F34567890
+curl -X DELETE http://localhost:8080/carts/user001/items/F34567890
 
 # 7. Final cart check
-curl -X GET http://localhost:8080/api/cart/user001
+curl -X GET http://localhost:8080/carts/user001
 
 # 8. Checkout the cart
-curl -X POST http://localhost:8080/api/cart/user001/checkout \
+curl -X POST http://localhost:8080/carts/user001/checkout \
   -H "Content-Type: application/json" \
   -d '{
     "payment_method": {
@@ -663,10 +663,10 @@ curl -X POST http://localhost:8080/api/cart/user001/checkout \
 
 ```bash
 # 1. Clear user's cart
-curl -X POST http://localhost:8080/api/cart/user001/clear
+curl -X DELETE http://localhost:8080/carts/user001/items
 
 # 2. Clean up all data
-curl -X POST http://localhost:8080/api/admin/cleanup
+curl -X POST http://localhost:8080/admin/cleanup
 ```
 
 ---

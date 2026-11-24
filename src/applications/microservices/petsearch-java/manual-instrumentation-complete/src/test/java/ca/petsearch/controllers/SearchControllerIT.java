@@ -127,7 +127,7 @@ public class SearchControllerIT {
 
     @Test
     public void testSearchNoFilters() {
-        assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/api/search",
+        assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/pets",
                 String.class))
                 .contains("petid", "availability", "petcolor", "peturl", kittenId, bunnyId, puppyId)
                 .doesNotContain("{S:")
@@ -136,17 +136,17 @@ public class SearchControllerIT {
 
     @Test
     public void testSearchByPetType() {
-        assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/api/search?pettype=bunny",
+        assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/pets?pet_type=bunny",
                 String.class))
                 .contains("petid", "availability", "petcolor", "peturl", bunnyId)
                 .doesNotContain(kittenId, puppyId);
 
-        assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/api/search?pettype=puppy",
+        assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/pets?pet_type=puppy",
                 String.class))
                 .contains("petid", "availability", "petcolor", "peturl", puppyId)
                 .doesNotContain(kittenId, bunnyId);
 
-        assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/api/search?pettype=kitten",
+        assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/pets?pet_type=kitten",
                 String.class))
                 .contains("petid", "availability", "petcolor", "peturl", kittenId)
                 .doesNotContain(puppyId, bunnyId);
@@ -154,17 +154,17 @@ public class SearchControllerIT {
 
     @Test
     public void testSearchByPetColor() {
-        assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/api/search?petcolor=braun",
+        assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/pets?pet_color=braun",
                 String.class))
                 .contains("petid", "availability", "petcolor", "peturl", kittenId)
                 .doesNotContain(bunnyId, puppyId);
 
-        assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/api/search?petcolor=black",
+        assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/pets?pet_color=black",
                 String.class))
                 .contains("petid", "availability", "petcolor", "peturl", bunnyId)
                 .doesNotContain(kittenId, puppyId);
 
-        assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/api/search?petcolor=white",
+        assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/pets?pet_color=white",
                 String.class))
                 .contains("petid", "availability", "petcolor", "peturl", puppyId)
                 .doesNotContain(kittenId, bunnyId);
@@ -172,20 +172,27 @@ public class SearchControllerIT {
 
     @Test
     public void testSearchByPetId() {
-        assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/api/search?petid=" + kittenId,
+        assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/pets/" + kittenId,
                 String.class))
                 .contains("petid", "availability", "petcolor", "peturl", kittenId)
                 .doesNotContain(bunnyId, puppyId);
 
-        assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/api/search?petid=" + bunnyId,
+        assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/pets/" + bunnyId,
                 String.class))
                 .contains("petid", "availability", "petcolor", "peturl", bunnyId)
                 .doesNotContain(kittenId, puppyId);
 
-        assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/api/search?petid=" + puppyId,
+        assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/pets/" + puppyId,
                 String.class))
                 .contains("petid", "availability", "petcolor", "peturl", puppyId)
                 .doesNotContain(kittenId, bunnyId);
+    }
+
+    @Test
+    public void testGetPetNotFound() {
+        assertThat(this.restTemplate.getForEntity("http://localhost:" + port + "/pets/" + UUID.randomUUID(),
+                String.class).getStatusCodeValue())
+                .isEqualTo(404);
     }
 
     @TestConfiguration

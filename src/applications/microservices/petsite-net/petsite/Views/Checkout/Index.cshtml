@@ -144,7 +144,7 @@
         <div class="text-center">
             <h4>Your cart is empty</h4>
             <p class="text-muted">Add some delicious food items to your cart!</p>
-            <a asp-controller="FoodService" asp-action="Index" asp-route-userId="@ViewBag.UserId" asp-route-petType="puppy" class="btn btn-primary btn-lg">Buy Food</a>
+            <a asp-controller="FoodService" asp-action="Index" asp-route-userId="@ViewBag.UserId" asp-route-pet_type="puppy" class="btn btn-primary btn-lg">Buy Food</a>
         </div>
     }
 </div>
@@ -160,10 +160,8 @@ $(document).ready(function() {
         var foodId = $(this).data('food-id');
 
         $.ajax({
-            url: '/Checkout/RemoveItem',
-            type: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify({ userId: userId, food_id: foodId }),
+            url: '/cart/items/' + encodeURIComponent(foodId) + '?userId=' + encodeURIComponent(userId),
+            type: 'DELETE',
             success: function(cartData) {
                 // Refresh cart display
                 refreshCartDisplay(cartData);
@@ -249,7 +247,7 @@ $(document).ready(function() {
         };
 
         $.ajax({
-            url: '/Checkout/PayAndCheckOut',
+            url: '/cart/checkout',
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({ ...paymentData, userId: userId }),

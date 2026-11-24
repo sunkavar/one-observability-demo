@@ -73,7 +73,7 @@ namespace PetSite.Controllers
             };
         }
 
-        [HttpGet("housekeeping")]
+        [HttpPost("/admin/housekeeping")]
         public async Task<IActionResult> HouseKeeping()
         {
             if (EnsureUserId()) return new EmptyResult();
@@ -84,7 +84,7 @@ namespace PetSite.Controllers
             {
                 string cleanupadoptionsurl = await ParameterNames.GetParameterValueAsync(ParameterNames.CLEANUP_ADOPTIONS_URL, _refreshManager);
                 using var httpClient = _httpClientFactory.CreateClient();
-                var url = UrlHelper.BuildUrl(cleanupadoptionsurl, new String[]{userId}, null);
+                var url = UrlHelper.BuildUrl(cleanupadoptionsurl, null, ("user_id", userId));
                 var response = await httpClient.DeleteAsync(url);
                 if (!response.IsSuccessStatusCode)
                 {
@@ -104,7 +104,7 @@ namespace PetSite.Controllers
             return View();
         }
 
-        [HttpGet("debug-config")]
+        [HttpGet("/admin/debug-config")]
         public IActionResult DebugConfig()
         {
             var result = new Dictionary<string, object>
@@ -120,37 +120,39 @@ namespace PetSite.Controllers
 
         }
 
-        [HttpGet]
-        public async Task<IActionResult> Index(string selectedPetType, string selectedPetColor, string petid)
+        [HttpGet("/")]
+        public IActionResult Root()
+        {
+            return Redirect("/pets" + Request.QueryString.Value);
+        }
+
+        [HttpGet("/pets")]
+        public async Task<IActionResult> Index([FromQuery(Name = "pet_type")] string petType, [FromQuery(Name = "pet_color")] string petColor)
         {
             if (EnsureUserId()) return new EmptyResult();
-            // Add custom span attributes using Activity API
             var currentActivity = Activity.Current;
             if (currentActivity != null)
             {
-                currentActivity.SetTag("pet.type", selectedPetType);
-                currentActivity.SetTag("pet.color", selectedPetColor);
-                currentActivity.SetTag("pet.id", petid);
+                currentActivity.SetTag("pet.type", petType);
+                currentActivity.SetTag("pet.color", petColor);
 
-                _logger.LogInformation($"Search string - PetType:{selectedPetType} PetColor:{selectedPetColor} PetId:{petid}");
+                _logger.LogInformation($"Search string - PetType:{petType} PetColor:{petColor}");
             }
 
             List<Pet> Pets;
 
             try
             {
-                // Create a new activity for the API call
                 using (var activity = Activity.Current?.Source?.StartActivity("Calling Search API"))
                 {
                     if (activity != null)
                     {
-                        activity.SetTag("pet.type", selectedPetType);
-                        activity.SetTag("pet.color", selectedPetColor);
-                        activity.SetTag("pet.id", petid);
+                        activity.SetTag("pet.type", petType);
+                        activity.SetTag("pet.color", petColor);
                     }
 
                     var userId = Request.Query["userId"].ToString();
-                    Pets = await _petSearchService.GetPetDetails(selectedPetType, selectedPetColor, petid, userId);
+                    Pets = await _petSearchService.SearchPets(petType, petColor, userId);
                 }
             }
             catch (HttpRequestException e)
@@ -179,8 +181,8 @@ namespace PetSite.Controllers
                 {
                     PetTypes = _variety.PetTypes,
                     PetColors = _variety.PetColors,
-                    SelectedPetColor = selectedPetColor,
-                    SelectedPetType = selectedPetType
+                    SelectedPetColor = petColor,
+                    SelectedPetType = petType
                 }
             };
 
@@ -192,6 +194,7 @@ namespace PetSite.Controllers
             return View(PetDetails);
         }
 
+        [HttpGet("/error")]
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error(string userId, string message)
         {

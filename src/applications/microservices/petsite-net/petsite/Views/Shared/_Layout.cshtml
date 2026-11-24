@@ -73,7 +73,7 @@
                             </svg> Waggle AI
                         </a>
                         <a class="ps-link @(ctrl == "FoodService" ? "ps-on" : "")" asp-controller="FoodService"
-                           asp-action="Index" asp-route-userId="@ViewBag.UserId" asp-route-petType="puppy">
+                           asp-action="Index" asp-route-userId="@ViewBag.UserId" asp-route-pet_type="puppy">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
                                 <path d="M4.5 8.5h15l-1.4 10.2H5.9L4.5 8.5zM9.2 8.5V6.4a2.8 2.8 0 015.6 0v2.1" />
                             </svg> Buy Food
@@ -84,13 +84,15 @@
                                 <path d="M4 6.5h16M4 12h16M4 17.5h10" />
                             </svg> Adoption List
                         </a>
-                        <a class="ps-link @(ctrl == "Home" && act == "HouseKeeping" ? "ps-on" : "")"
-                           id="performhousekeeping" asp-controller="Home" asp-action="HouseKeeping"
-                           asp-route-userId="@ViewBag.UserId">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
-                                <path d="M12 3.4l7.5 3.7v5.6c0 4.7-7.5 7.6-7.5 7.6S4.5 17.4 4.5 12.7V7.1z" />
-                            </svg> Housekeeping
-                        </a>
+                        <form class="d-inline" method="post" asp-controller="Home" asp-action="HouseKeeping"
+                              asp-route-userId="@ViewBag.UserId">
+                            <button type="submit" class="ps-link border-0 bg-transparent @(ctrl == "Home" && act == "HouseKeeping" ? "ps-on" : "")"
+                                    id="performhousekeeping">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
+                                    <path d="M12 3.4l7.5 3.7v5.6c0 4.7-7.5 7.6-7.5 7.6S4.5 17.4 4.5 12.7V7.1z" />
+                                </svg> Housekeeping
+                            </button>
+                        </form>
                     </div>
 
                     <div class="ps-navact">
@@ -131,7 +133,7 @@
             var userId = '@ViewBag.UserId';
             if (userId) {
                 $.ajax({
-                    url: '/FoodService/GetCartCount',
+                    url: '/cart/count',
                     type: 'GET',
                     data: { userId: userId },
                     success: function (response) {

@@ -4,10 +4,6 @@ SPDX-License-Identifier: Apache-2.0
 */
 package ca.petsearch.controllers;
 
-/**
- * Search query parameters with support for multiple parameter name aliases
- * Similar to the petfood Rust application's parameter handling
- */
 public class SearchQuery {
     private String petType;
     private String petColor;

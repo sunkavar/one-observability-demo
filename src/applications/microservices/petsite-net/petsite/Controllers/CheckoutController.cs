@@ -27,7 +27,7 @@ namespace PetSite.Controllers
             _refreshManager = refreshManager;
         }
 
-        [HttpGet]
+        [HttpGet("/cart")]
         public async Task<ActionResult> Index([FromQuery] string userId)
         {
             if (EnsureUserId()) return new EmptyResult();
@@ -45,7 +45,7 @@ namespace PetSite.Controllers
             }
         }
 
-        [HttpPost]
+        [HttpPost("/cart/checkout")]
         public async Task<IActionResult> PayAndCheckOut([FromBody] JsonElement requestData)
         {
             string userId = string.Empty;
@@ -87,7 +87,7 @@ namespace PetSite.Controllers
             }
         }
 
-        [HttpPost]
+        [HttpPost("/cart/clear")]
         public async Task<IActionResult> ClearCart(string userId)
         {
             try
@@ -103,14 +103,11 @@ namespace PetSite.Controllers
             }
         }
 
-        [HttpPost]
-        public async Task<IActionResult> RemoveItem([FromBody] JsonElement requestData)
+        [HttpDelete("/cart/items/{food_id}")]
+        public async Task<IActionResult> RemoveItem([FromRoute(Name = "food_id")] string foodId, [FromQuery] string userId)
         {
             try
             {
-                var userId = requestData.GetProperty("userId").GetString();
-                var foodId = requestData.GetProperty("food_id").GetString();
-
                 using var httpClient = _httpClientFactory.CreateClient();
                 var cartApiUrl = await ParameterNames.GetParameterValueAsync(ParameterNames.CART_API_URL, _refreshManager);
                 var removeItemUrl = UrlHelper.BuildUrl(cartApiUrl, new[] { userId, "items", foodId }, null);
@@ -150,8 +147,8 @@ namespace PetSite.Controllers
                 _logger.LogInformation($"Clearing cart for user: {userId}");
                 using var httpClient = _httpClientFactory.CreateClient();
                 var cartApiUrl = await ParameterNames.GetParameterValueAsync(ParameterNames.CART_API_URL, _refreshManager);
-                var clearCartUrl = UrlHelper.BuildUrl(cartApiUrl, new[] { userId, "clear" }, null);
-                await httpClient.PostAsync(clearCartUrl, new StringContent(string.Empty, Encoding.UTF8, "application/json"));
+                var clearCartUrl = UrlHelper.BuildUrl(cartApiUrl, new[] { userId, "items" }, null);
+                await httpClient.DeleteAsync(clearCartUrl);
                 _logger.LogInformation($"Cart cleared for user: {userId}");
             }
             catch (Exception ex)

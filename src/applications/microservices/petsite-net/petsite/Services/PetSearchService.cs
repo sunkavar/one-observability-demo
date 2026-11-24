@@ -1,12 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.AspNetCore.Http;
-using PetSite.Models;
 using PetSite.ViewModels;
 using PetSite.Helpers;
 using Prometheus;
@@ -16,13 +14,13 @@ namespace PetSite.Services
 {
     public interface IPetSearchService
     {
-        Task<List<Pet>> GetPetDetails(string pettype, string petcolor, string petid, string userId);
+        Task<List<Pet>> SearchPets(string petType, string petColor, string userId);
+        Task<Pet> GetPet(string petId, string userId);
     }
 
     public class PetSearchService : IPetSearchService
     {
         private readonly IHttpClientFactory _httpClientFactory;
-        private readonly IConfiguration _configuration;
         private readonly ILogger<PetSearchService> _logger;
         private readonly ParameterRefreshManager _refreshManager;
 
@@ -36,20 +34,16 @@ namespace PetSite.Services
         private static readonly Counter BunnySearchCount =
             Metrics.CreateCounter("petsite_pet_bunny_searches_total", "Count the number of bunny searches performed");
 
-        private readonly Microsoft.AspNetCore.Http.IHttpContextAccessor _httpContextAccessor;
-
-        public PetSearchService(IHttpClientFactory httpClientFactory, IConfiguration configuration, ILogger<PetSearchService> logger, Microsoft.AspNetCore.Http.IHttpContextAccessor httpContextAccessor, ParameterRefreshManager refreshManager)
+        public PetSearchService(IHttpClientFactory httpClientFactory, ILogger<PetSearchService> logger, ParameterRefreshManager refreshManager)
         {
             _httpClientFactory = httpClientFactory;
-            _configuration = configuration;
             _logger = logger;
-            _httpContextAccessor = httpContextAccessor;
             _refreshManager = refreshManager;
         }
 
-        public async Task<List<Pet>> GetPetDetails(string pettype, string petcolor, string petid, string userId)
+        public async Task<List<Pet>> SearchPets(string petType, string petColor, string userId)
         {
-            switch (pettype)
+            switch (petType)
             {
                 case "puppy":
                     PuppySearchCount.Inc();
@@ -65,21 +59,41 @@ namespace PetSite.Services
                     break;
             }
 
-            string searchapiurl = await ParameterNames.GetParameterValueAsync(ParameterNames.SEARCH_API_URL, _refreshManager);
+            string searchApiUrl = await ParameterNames.GetParameterValueAsync(ParameterNames.SEARCH_API_URL, _refreshManager);
+            var url = UrlHelper.BuildUrl(searchApiUrl, null,
+                ("pet_type", petType != "all" ? petType : null),
+                ("pet_color", petColor != "all" ? petColor : null),
+                ("user_id", userId));
+
+            var json = await GetAsync(url, allowNotFound: false);
+            if (string.IsNullOrEmpty(json))
+                return new List<Pet>();
+
+            return JsonSerializer.Deserialize<List<Pet>>(json) ?? new List<Pet>();
+        }
+
+        public async Task<Pet> GetPet(string petId, string userId)
+        {
+            string searchApiUrl = await ParameterNames.GetParameterValueAsync(ParameterNames.SEARCH_API_URL, _refreshManager);
+            var url = UrlHelper.BuildUrl(searchApiUrl, new[] { Uri.EscapeDataString(petId) }, ("user_id", userId));
+
+            var json = await GetAsync(url, allowNotFound: true);
+            return string.IsNullOrEmpty(json) ? null : JsonSerializer.Deserialize<Pet>(json);
+        }
+
+        private async Task<string> GetAsync(string url, bool allowNotFound)
+        {
             using var httpClient = _httpClientFactory.CreateClient();
             httpClient.Timeout = TimeSpan.FromSeconds(30);
 
             try
             {
-                var url = UrlHelper.BuildUrl(searchapiurl, null,
-                    ("pettype", pettype != "all" ? pettype : null),
-                    ("petcolor", petcolor != "all" ? petcolor : null),
-                    ("petid", petid != "all" ? petid : null),
-                    ("userId", userId));
-
                 _logger.LogInformation($"Calling the PetSearch API with: {url}");
 
                 var response = await httpClient.GetAsync(url);
+                if (allowNotFound && response.StatusCode == HttpStatusCode.NotFound)
+                    return null;
+
                 if (!response.IsSuccessStatusCode)
                 {
                     var responseContent = await response.Content.ReadAsStringAsync();
@@ -87,13 +101,8 @@ namespace PetSite.Services
                 }
 
                 var jsonContent = await response.Content.ReadAsStringAsync();
-
                 _logger.LogInformation($"PetSearch API responded with: {jsonContent}");
-
-                if (string.IsNullOrEmpty(jsonContent))
-                    return new List<Pet>();
-
-                return JsonSerializer.Deserialize<List<Pet>>(jsonContent) ?? new List<Pet>();
+                return jsonContent;
             }
             catch (Exception ex)
             {

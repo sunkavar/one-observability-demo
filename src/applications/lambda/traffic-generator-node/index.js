@@ -110,8 +110,6 @@ async function simulateUserJourney(petsiteBaseUrl) {
     const petId = `00${Math.floor(Math.random() * 10)}`;
     const petType = ['puppy', 'kitten', 'bunny', 'lizard'][Math.floor(Math.random() * 4)];
     const petColor = ['brown', 'black', 'white'][Math.floor(Math.random() * 3)];
-    const price = Math.floor(Math.random() * 200) + 50;
-    const cutenessRate = Math.floor(Math.random() * 5) + 1;
 
     // Food IDs by pet type
     const foodIdsByType = {
@@ -149,7 +147,7 @@ async function simulateUserJourney(petsiteBaseUrl) {
     try {
         // 1. Homepage request - establish session (include userId to avoid redirect)
         try {
-            const homepageUrl = `${petsiteBaseUrl}/?userId=${userId}`;
+            const homepageUrl = `${petsiteBaseUrl}/pets?userId=${userId}`;
             await makeTrackedRequest(homepageUrl, 'GET', `Homepage for ${userId}`);
         } catch {
             // Error already handled by makeTrackedRequest
@@ -157,7 +155,7 @@ async function simulateUserJourney(petsiteBaseUrl) {
 
         // 2. Pet selection page with parameters
         try {
-            const petSelectionUrl = `${petsiteBaseUrl}/?selectedPetType=${petType}&selectedPetColor=${petColor}&userId=${userId}`;
+            const petSelectionUrl = `${petsiteBaseUrl}/pets?pet_type=${petType}&pet_color=${petColor}&userId=${userId}`;
             await makeTrackedRequest(petSelectionUrl, 'GET', `Pet Selection for ${userId}`);
         } catch {
             // Error already handled by makeTrackedRequest
@@ -165,7 +163,7 @@ async function simulateUserJourney(petsiteBaseUrl) {
 
         // 3. Pet adoption page
         try {
-            const adoptionUrl = `${petsiteBaseUrl}/Adoption?userId=${userId}&petid=${petId}&pettype=${petType}&petcolor=${petColor}&price=${price}&cuteness_rate=${cutenessRate}`;
+            const adoptionUrl = `${petsiteBaseUrl}/pets/${petId}?userId=${userId}`;
             await makeTrackedRequest(adoptionUrl, 'GET', `Pet Adoption for ${userId}`);
         } catch {
             // Error already handled by makeTrackedRequest
@@ -173,7 +171,7 @@ async function simulateUserJourney(petsiteBaseUrl) {
 
         // 4. Payment page for pet adoption
         try {
-            const paymentUrl = `${petsiteBaseUrl}/Payment?userId=${userId}&status=success&petType=${petType}&petId=${petId}`;
+            const paymentUrl = `${petsiteBaseUrl}/adoptions/${petId}/confirmation?userId=${userId}&status=success&pet_type=${petType}`;
             await makeTrackedRequest(paymentUrl, 'GET', `Payment for ${userId}`);
         } catch {
             // Error already handled by makeTrackedRequest
@@ -181,7 +179,7 @@ async function simulateUserJourney(petsiteBaseUrl) {
 
         // 5. Food service page - browse food for the adopted pet
         try {
-            const foodServiceUrl = `${petsiteBaseUrl}/FoodService?userId=${userId}&petType=${petType}&petId=${petId}`;
+            const foodServiceUrl = `${petsiteBaseUrl}/foods?userId=${userId}&pet_type=${petType}`;
             await makeTrackedRequest(foodServiceUrl, 'GET', `Food Service for ${userId}`);
         } catch {
             // Error already handled by makeTrackedRequest
@@ -189,8 +187,8 @@ async function simulateUserJourney(petsiteBaseUrl) {
 
         // 6. Add food items to cart
         try {
-            const addToCartUrl = `${petsiteBaseUrl}/FoodService/AddToCart`;
-            const addToCartData = `foodId=${encodeURIComponent(randomFoodId)}&userId=${encodeURIComponent(userId)}`;
+            const addToCartUrl = `${petsiteBaseUrl}/cart/items`;
+            const addToCartData = `food_id=${encodeURIComponent(randomFoodId)}&userId=${encodeURIComponent(userId)}`;
             await makeTrackedRequest(addToCartUrl, 'POST', `Add To Cart for ${userId}`, addToCartData, 'form');
         } catch {
             // Error already handled by makeTrackedRequest
@@ -198,7 +196,7 @@ async function simulateUserJourney(petsiteBaseUrl) {
 
         // 7. Check cart count
         try {
-            const cartCountUrl = `${petsiteBaseUrl}/FoodService/GetCartCount?userId=${userId}`;
+            const cartCountUrl = `${petsiteBaseUrl}/cart/count?userId=${userId}`;
             await makeTrackedRequest(cartCountUrl, 'GET', `Get Cart Count for ${userId}`);
         } catch {
             // Error already handled by makeTrackedRequest
@@ -206,17 +204,16 @@ async function simulateUserJourney(petsiteBaseUrl) {
 
         // 8. Remove some items from cart (simulate changing mind)
         try {
-            const removeItemUrl = `${petsiteBaseUrl}/Checkout/RemoveItem`;
-            const removeItemData = JSON.stringify({ userId: userId, food_id: randomFoodId });
-            await makeTrackedRequest(removeItemUrl, 'POST', `Remove Item for ${userId}`, removeItemData);
+            const removeItemUrl = `${petsiteBaseUrl}/cart/items/${encodeURIComponent(randomFoodId)}?userId=${encodeURIComponent(userId)}`;
+            await makeTrackedRequest(removeItemUrl, 'DELETE', `Remove Item for ${userId}`);
         } catch {
             // Error already handled by makeTrackedRequest
         }
 
         // 9. Add different food items to cart
         try {
-            const addToCartUrl2 = `${petsiteBaseUrl}/FoodService/AddToCart`;
-            const addToCartData2 = `foodId=${encodeURIComponent(randomFoodId)}&userId=${encodeURIComponent(userId)}`;
+            const addToCartUrl2 = `${petsiteBaseUrl}/cart/items`;
+            const addToCartData2 = `food_id=${encodeURIComponent(randomFoodId)}&userId=${encodeURIComponent(userId)}`;
             await makeTrackedRequest(
                 addToCartUrl2,
                 'POST',
@@ -230,7 +227,7 @@ async function simulateUserJourney(petsiteBaseUrl) {
 
         // 10. Clear entire cart (simulate starting over)
         try {
-            const clearCartUrl = `${petsiteBaseUrl}/Checkout/ClearCart`;
+            const clearCartUrl = `${petsiteBaseUrl}/cart/clear`;
             const clearCartData = `userId=${encodeURIComponent(userId)}`;
             await makeTrackedRequest(clearCartUrl, 'POST', `Clear Cart for ${userId}`, clearCartData, 'form');
         } catch {
@@ -239,8 +236,8 @@ async function simulateUserJourney(petsiteBaseUrl) {
 
         // 11. Reorder items (fresh start with new selection)
         try {
-            const addToCartUrl3 = `${petsiteBaseUrl}/FoodService/AddToCart`;
-            const addToCartData3 = `foodId=${encodeURIComponent(randomFoodId)}&userId=${encodeURIComponent(userId)}`;
+            const addToCartUrl3 = `${petsiteBaseUrl}/cart/items`;
+            const addToCartData3 = `food_id=${encodeURIComponent(randomFoodId)}&userId=${encodeURIComponent(userId)}`;
             await makeTrackedRequest(addToCartUrl3, 'POST', `Reorder Items for ${userId}`, addToCartData3, 'form');
         } catch {
             // Error already handled by makeTrackedRequest
@@ -248,7 +245,7 @@ async function simulateUserJourney(petsiteBaseUrl) {
 
         // 12. Checkout page - review items
         try {
-            const checkoutUrl = `${petsiteBaseUrl}/Checkout?userId=${userId}`;
+            const checkoutUrl = `${petsiteBaseUrl}/cart?userId=${userId}`;
             await makeTrackedRequest(checkoutUrl, 'GET', `Checkout for ${userId}`);
         } catch {
             // Error already handled by makeTrackedRequest
@@ -256,7 +253,7 @@ async function simulateUserJourney(petsiteBaseUrl) {
 
         // 13. Pay and checkout - complete the purchase
         try {
-            const payAndCheckoutUrl = `${petsiteBaseUrl}/Checkout/PayAndCheckOut`;
+            const payAndCheckoutUrl = `${petsiteBaseUrl}/cart/checkout`;
             const payAndCheckoutData = JSON.stringify({
                 payment_method: {
                     CreditCard: {

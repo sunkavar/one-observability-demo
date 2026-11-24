@@ -39,7 +39,7 @@
 
             @if (showTakeMeHomeButton)
             {
-                <form asp-controller="adoption" asp-action="takemehome" method="post">
+                <form asp-controller="Adoption" asp-action="TakeMeHome" asp-route-pet_id="@Model.petid" method="post">
                     @if (available)
                     {
                         <button class="pet-button" type="submit">
@@ -58,12 +58,8 @@
                         <span class="ps-unavailable">Unavailable</span>
                     }
 
-                    <input type="hidden" asp-for="@Model.petcolor" name="petcolor" />
-                    <input type="hidden" asp-for="@Model.petid" name="petid" />
-                    <input type="hidden" asp-for="@Model.pettype" name="pettype" />
-                    <input type="hidden" asp-for="@Model.peturl" name="peturl" />
-                    <input type="hidden" asp-for="@Model.price" name="price" />
-                    <input type="hidden" asp-for="@Model.cuteness_rate" name="cuteness_rate" />
+                    <input type="hidden" asp-for="@Model.petcolor" name="pet_color" />
+                    <input type="hidden" asp-for="@Model.pettype" name="pet_type" />
                     <input type="hidden" name="userId" value="@ViewBag.UserId" />
                 </form>
             }

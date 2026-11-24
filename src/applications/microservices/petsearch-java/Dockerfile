@@ -20,6 +20,11 @@ RUN yum install -y curl unzip && \
 
 ARG JAR_FILE=build/libs/\*.jar
 COPY --from=build /app/${JAR_FILE} ./app.jar
+COPY --from=build /app/build/agent-extension/petsearch-agent-extension.jar ./petsearch-agent-extension.jar
+
+# Only take effect when the ADOT agent is attached via JAVA_TOOL_OPTIONS; the sampler drops /health/status server spans.
+ENV OTEL_JAVAAGENT_EXTENSIONS=/app/petsearch-agent-extension.jar \
+    OTEL_TRACES_SAMPLER=petsearch_parentbased_always_on
 
 # Create non-root user
 RUN yum install -y shadow-utils && \

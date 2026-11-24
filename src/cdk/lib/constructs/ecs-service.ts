@@ -218,6 +218,8 @@ export abstract class EcsService extends Microservice {
         const defaultEnvironment = {
             // clear text, not for sensitive data
             AWS_REGION: Stack.of(this).region,
+            // Changes each commit so ECS replaces tasks and pulls the new :latest image.
+            REDEPLOY_TOKEN: process.env.CODEBUILD_RESOLVED_SOURCE_VERSION || process.env.BRANCH_NAME || 'dev',
         };
 
         const environment = {

@@ -5,10 +5,13 @@ use axum::{
 };
 use opentelemetry::{trace::TraceContextExt, KeyValue};
 use std::{sync::Arc, time::Instant};
-use tracing::{error, info, instrument, Instrument};
+use tracing::{error, info, Instrument};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 use super::Metrics;
+
+/// ALB health checks and metric scrapes would otherwise dominate trace volume.
+const UNTRACED_PATHS: [&str; 2] = ["/health/status", "/metrics"];
 
 /// Middleware for automatic request tracing and metrics collection
 pub async fn observability_middleware(
@@ -16,6 +19,10 @@ pub async fn observability_middleware(
     request: Request,
     next: Next,
 ) -> Response {
+    if UNTRACED_PATHS.contains(&request.uri().path()) {
+        return next.run(request).await;
+    }
+
     let start_time = Instant::now();
     let method = request.method().to_string();
     let uri = request.uri().to_string();
@@ -113,7 +120,7 @@ pub async fn observability_middleware(
         otel_span.set_attribute(KeyValue::new("http.response.status_code", status_code as i64));
         otel_span.set_attribute(KeyValue::new("http.response_code", status_code as i64));
         otel_span.set_attribute(KeyValue::new("response_code", status_code as i64));
-        if let Some(user_id) = path_param(&endpoint, &uri, ":user_id") {
+        if let Some(user_id) = path_param(&endpoint, &uri, "{user_id}") {
             otel_span.set_attribute(KeyValue::new("user.id", user_id));
         }
 
@@ -177,10 +184,6 @@ impl DatabaseTracingMiddleware {
     }
 
     /// Trace a database operation with automatic metrics recording
-    #[instrument(skip_all, fields(
-        operation = %operation,
-        table = %table,
-    ))]
     pub async fn trace_operation<F, T, E>(
         &self,
         operation: &str,
@@ -193,7 +196,7 @@ impl DatabaseTracingMiddleware {
     {
         let start_time = Instant::now();
 
-        info!("Starting database operation");
+        info!(operation, table, "Starting database operation");
 
         match future.await {
             Ok(result) => {
@@ -202,6 +205,8 @@ impl DatabaseTracingMiddleware {
                     .record_database_operation(operation, table, true, duration_seconds);
 
                 info!(
+                    operation,
+                    table,
                     duration_ms = start_time.elapsed().as_millis(),
                     "Database operation completed successfully"
                 );
@@ -214,6 +219,8 @@ impl DatabaseTracingMiddleware {
                     .record_database_operation(operation, table, false, duration_seconds);
 
                 error!(
+                    operation,
+                    table,
                     error = %error,
                     duration_ms = start_time.elapsed().as_millis(),
                     "Database operation failed"
@@ -236,11 +243,6 @@ impl BusinessTracingMiddleware {
     }
 
     /// Trace a food operation
-    #[instrument(skip_all, fields(
-        operation = %operation,
-        pet_type = pet_type,
-        food_type = food_type,
-    ))]
     pub async fn trace_food_operation<F, T, E>(
         &self,
         operation: &str,
@@ -254,7 +256,7 @@ impl BusinessTracingMiddleware {
     {
         let start_time = Instant::now();
 
-        info!("Starting food operation");
+        info!(operation, pet_type, food_type, "Starting food operation");
 
         match future.await {
             Ok(result) => {
@@ -273,6 +275,7 @@ impl BusinessTracingMiddleware {
                     .record_food_operation(operation, pet_type, food_type, false);
 
                 error!(
+                    operation,
                     error = %error,
                     duration_ms = start_time.elapsed().as_millis(),
                     "Food operation failed"
@@ -284,10 +287,6 @@ impl BusinessTracingMiddleware {
     }
 
     /// Trace a cart operation
-    #[instrument(skip_all, fields(
-        operation = %operation,
-        user.id = user_id,
-    ))]
     pub async fn trace_cart_operation<F, T, E>(
         &self,
         operation: &str,
@@ -300,7 +299,7 @@ impl BusinessTracingMiddleware {
     {
         let start_time = Instant::now();
 
-        info!("Starting cart operation");
+        info!(operation, user.id = user_id, "Starting cart operation");
 
         match future.await {
             Ok(result) => {
@@ -317,6 +316,7 @@ impl BusinessTracingMiddleware {
                 self.metrics.record_cart_operation(operation, false);
 
                 error!(
+                    operation,
                     error = %error,
                     duration_ms = start_time.elapsed().as_millis(),
                     "Cart operation failed"
@@ -328,9 +328,6 @@ impl BusinessTracingMiddleware {
     }
 
     /// Trace a recommendation request
-    #[instrument(skip_all, fields(
-        pet_type = %pet_type,
-    ))]
     pub async fn trace_recommendation_request<F, T, E>(
         &self,
         pet_type: &str,
@@ -342,7 +339,7 @@ impl BusinessTracingMiddleware {
     {
         let start_time = Instant::now();
 
-        info!("Starting recommendation request");
+        info!(pet_type, "Starting recommendation request");
 
         match future.await {
             Ok(result) => {
@@ -370,7 +367,7 @@ impl BusinessTracingMiddleware {
     }
 }
 
-/// Value of a `:name` segment of a route template, taken from the request path.
+/// Value of a `{name}` segment of a route template, taken from the request path.
 fn path_param(template: &str, uri: &str, name: &str) -> Option<String> {
     let path = uri.split('?').next().unwrap_or(uri);
     template
@@ -524,12 +521,49 @@ mod tests {
 
     #[test]
     fn path_param_reads_user_id_from_matched_route() {
-        let template = "/api/cart/:user_id/items";
+        let template = "/carts/{user_id}/items";
         assert_eq!(
-            path_param(template, "/api/cart/user1510/items?x=1", ":user_id"),
+            path_param(template, "/carts/user1510/items?x=1", "{user_id}"),
             Some("user1510".to_string())
         );
-        assert_eq!(path_param("/api/foods", "/api/foods", ":user_id"), None);
-        assert_eq!(path_param(template, "/api/cart//items", ":user_id"), None);
+        assert_eq!(path_param("/foods", "/foods", "{user_id}"), None);
+        assert_eq!(path_param(template, "/carts//items", "{user_id}"), None);
+    }
+
+    #[tokio::test]
+    async fn matched_path_uses_brace_syntax() {
+        let app = Router::new().route(
+            "/carts/{user_id}",
+            get(|path: MatchedPath| async move { path.as_str().to_string() }),
+        );
+        let request = Request::builder()
+            .uri("/carts/user1")
+            .body(Body::empty())
+            .unwrap();
+        let response = app.oneshot(request).await.unwrap();
+        let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let template = std::str::from_utf8(&body).unwrap();
+        assert_eq!(
+            path_param(template, "/carts/user1", "{user_id}"),
+            Some("user1".to_string())
+        );
+    }
+
+    #[tokio::test]
+    async fn untraced_paths_still_reach_handler() {
+        let metrics = Arc::new(Metrics::new().unwrap());
+        let app = Router::new()
+            .route("/health/status", get(test_handler))
+            .layer(middleware::from_fn(move |req, next| {
+                observability_middleware(metrics.clone(), req, next)
+            }));
+        let request = Request::builder()
+            .uri("/health/status")
+            .body(Body::empty())
+            .unwrap();
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
     }
 }

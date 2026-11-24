@@ -19,7 +19,13 @@ ext {
     set('log4j2.version', '2.18.0')
 }
 
+sourceSets {
+    agentExtension
+}
+
 dependencies {
+    agentExtensionCompileOnly "io.opentelemetry:opentelemetry-sdk-trace"
+    agentExtensionCompileOnly "io.opentelemetry:opentelemetry-sdk-extension-autoconfigure-spi"
 
     implementation 'ch.qos.logback:logback-classic:1.2.3'
     implementation 'ch.qos.logback.contrib:logback-jackson:0.1.5'
@@ -64,6 +70,14 @@ dependencyManagement {
 jar { // https://docs.spring.io/spring-boot/docs/current/gradle-plugin/reference/htmlsingle/#packaging-executable.and-plain-archives
     enabled = false
 }
+
+// Loaded by the OTel agent via OTEL_JAVAAGENT_EXTENSIONS; kept out of build/libs so the Dockerfile jar glob still matches only the app.
+task agentExtensionJar(type: Jar) {
+    archiveFileName = 'petsearch-agent-extension.jar'
+    destinationDirectory = layout.buildDirectory.dir('agent-extension')
+    from sourceSets.agentExtension.output
+}
+assemble.dependsOn agentExtensionJar
 
 test {
     String etags = System.getProperty("excludeTags") ?

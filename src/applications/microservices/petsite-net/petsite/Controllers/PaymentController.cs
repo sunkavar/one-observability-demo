@@ -12,6 +12,7 @@ using PetSite.ViewModels;
 using PetSite.Services;
 using System.Text.Json;
 using System.Linq;
+using System.Text;
 using Prometheus;
 using PetSite.Configuration;
 
@@ -42,13 +43,12 @@ namespace PetSite.Controllers
             _refreshManager = refreshManager;
         }
 
-        // GET: Payment
-        [HttpGet]
-        public async Task<ActionResult> Index([FromQuery] string userId, string status, string petId, string petType)
+        [HttpGet("/adoptions/{pet_id}/confirmation")]
+        public async Task<ActionResult> Index([FromQuery] string userId, string status,
+            [FromRoute(Name = "pet_id")] string petId, [FromQuery(Name = "pet_type")] string petType)
         {
             if (EnsureUserId()) return new EmptyResult();
 
-            // Transfer Session to ViewData for the view
             ViewData["txStatus"] = status;
 
             Pet petDetails = null;
@@ -56,8 +56,7 @@ namespace PetSite.Controllers
             {
                 try
                 {
-                    var pets = await _petSearchService.GetPetDetails(petType, "all", petId, userId);
-                    petDetails = pets?.FirstOrDefault();
+                    petDetails = await _petSearchService.GetPet(petId, userId);
                 }
                 catch (Exception ex)
                 {
@@ -70,16 +69,12 @@ namespace PetSite.Controllers
             return View();
         }
 
-        // POST: Payment/MakePayment
-        [HttpPost]
-        // [ValidateAntiForgeryToken]
-        public async Task<IActionResult> MakePayment(string petId, string petType, string userId)
+        [HttpPost("/adoptions")]
+        public async Task<IActionResult> MakePayment([FromForm(Name = "pet_id")] string petId,
+            [FromForm(Name = "pet_type")] string petType, string userId)
         {
-            //if (EnsureUserId()) return new EmptyResult();
-
             if (string.IsNullOrEmpty(userId)) EnsureUserId();
 
-            // Add custom span attributes using Activity API
             var currentActivity = Activity.Current;
             if (currentActivity != null)
             {
@@ -91,7 +86,6 @@ namespace PetSite.Controllers
 
             try
             {
-                // Create tracing span for Payment API operation
                 using (var activity = Activity.Current?.Source?.StartActivity("Calling Payment API"))
                 {
                     if (activity != null)
@@ -100,26 +94,22 @@ namespace PetSite.Controllers
                         activity.SetTag("pet.type", petType);
                     }
 
-                    // userId parameter is already available
-
                     using var httpClient = _httpClientFactory.CreateClient();
 
                     var paymentapiurl = await ParameterNames.GetParameterValueAsync(ParameterNames.PAYMENT_API_URL, _refreshManager);
-                    var url = UrlHelper.BuildUrl(paymentapiurl, null,
-                        ("petId", petId), ("petType", petType), ("userId", userId));
-                    await httpClient.PostAsync(url, null);
+                    var url = UrlHelper.BuildUrl(paymentapiurl, null, null);
+                    var body = JsonSerializer.Serialize(new { pet_id = petId, pet_type = petType, user_id = userId });
+                    await httpClient.PostAsync(url, new StringContent(body, Encoding.UTF8, "application/json"));
                 }
 
-                //Increase purchase metric count
                 PetAdoptionCount.Inc();
-                return RedirectToAction("Index", new { userId = userId, status = "success", petType = petType, petId = petId });
+                return RedirectToAction("Index", new { pet_id = petId, userId = userId, status = "success", pet_type = petType });
             }
             catch (Exception ex)
             {
-                // Log the exception
                 _logger.LogError(ex, $"Error in MakePayment: {ex.Message} - for user: {userId}");
 
-                return RedirectToAction("Index", new { userId = userId, status = ex.Message });
+                return RedirectToAction("Index", new { pet_id = petId, userId = userId, status = ex.Message });
             }
         }
     }

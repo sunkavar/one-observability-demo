@@ -509,24 +509,24 @@ fn create_mock_app() -> Router {
 
     Router::new()
         .route("/health/status", get(mock_health))
-        .route("/api/foods", get(mock_list_foods))
-        .route("/api/foods/:food_id", get(mock_get_food))
-        .route("/api/admin/foods", post(mock_create_food))
+        .route("/foods", get(mock_list_foods))
+        .route("/foods/{food_id}", get(mock_get_food))
+        .route("/admin/foods", post(mock_create_food))
         .route(
-            "/api/admin/foods/:food_id",
+            "/admin/foods/{food_id}",
             put(mock_update_food).delete(mock_delete_food),
         )
         .route(
-            "/api/cart/:user_id",
+            "/carts/{user_id}",
             get(mock_get_cart).delete(mock_delete_cart),
         )
-        .route("/api/cart/:user_id/items", post(mock_add_cart_item))
+        .route("/carts/{user_id}/items", post(mock_add_cart_item))
         .route(
-            "/api/cart/:user_id/items/:food_id",
+            "/carts/{user_id}/items/{food_id}",
             put(mock_update_cart_item).delete(mock_delete_cart_item),
         )
-        .route("/api/admin/seed", post(mock_admin_seed))
-        .route("/api/admin/cleanup", post(mock_admin_cleanup))
+        .route("/admin/seed", post(mock_admin_seed))
+        .route("/admin/cleanup", post(mock_admin_cleanup))
         .layer(Extension(cart_state))
         .layer(Extension(deleted_foods))
 }
@@ -561,7 +561,7 @@ impl TestEnvironment {
         // For mock testing, just call the seed endpoint
         let response = self
             .client
-            .post(&format!("{}/api/admin/seed", self.base_url))
+            .post(&format!("{}/admin/seed", self.base_url))
             .send()
             .await
             .expect("Failed to seed test data");

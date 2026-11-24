@@ -88,9 +88,9 @@ $(document).ready(function() {
         var userId = $(this).data('user-id');
 
         $.ajax({
-            url: '/FoodService/AddToCart',
+            url: '/cart/items',
             type: 'POST',
-            data: { foodId: foodId, userId: userId },
+            data: { food_id: foodId, userId: userId },
             success: function(response) {
                 $('#error-message').hide();
                 if (response.totalItems > 0) {
@@ -115,7 +115,7 @@ $(document).ready(function() {
     $('input[name="petType"]').change(function() {
         var petType = $(this).val();
         var userId = '@ViewBag.UserId';
-        window.location.href = '/FoodService/Index?userId=' + userId + '&petType=' + petType;
+        window.location.href = '/foods?userId=' + encodeURIComponent(userId) + '&pet_type=' + encodeURIComponent(petType);
     });
 
     $('.show-more').click(function() {

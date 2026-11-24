@@ -186,7 +186,7 @@ export class ListAdoptionsService extends EcsService {
                 PARAMETER_STORE_PREFIX,
                 new Map(
                     Object.entries({
-                        [SSM_PARAMETER_NAMES.PET_LIST_ADOPTIONS_URL]: `http://${this.loadBalancedService?.loadBalancer.loadBalancerDnsName}/api/adoptionlist/`,
+                        [SSM_PARAMETER_NAMES.PET_LIST_ADOPTIONS_URL]: `http://${this.loadBalancedService?.loadBalancer.loadBalancerDnsName}/adoptions`,
                         [SSM_PARAMETER_NAMES.PET_LIST_ADOPTIONS_METRICS_URL]: `http://${this.loadBalancedService?.loadBalancer.loadBalancerDnsName}/metrics`,
                     }),
                 ),

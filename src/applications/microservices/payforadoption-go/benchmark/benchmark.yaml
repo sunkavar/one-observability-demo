@@ -14,9 +14,11 @@ plan:
 
     - name: Adopt Bunnies
       request:
-          url: /api/completeadoption?petId={{ item }}&petType=bunny&userId=user007
+          url: /adoptions
           method: POST
-          body: ''
+          headers:
+              Content-Type: application/json
+          body: '{"pet_id": "{{ item }}", "pet_type": "bunny", "user_id": "user007"}'
       with_items:
           - '023'
           - '024'
@@ -26,9 +28,11 @@ plan:
 
     - name: Adopt Kittens
       request:
-          url: /api/completeadoption?petId={{ item }}&petType=kitten&userId=user007
+          url: /adoptions
           method: POST
-          body: ''
+          headers:
+              Content-Type: application/json
+          body: '{"pet_id": "{{ item }}", "pet_type": "kitten", "user_id": "user007"}'
       with_items:
           - '016'
           - '017'
@@ -41,9 +45,11 @@ plan:
 
     - name: Adopt Puppies
       request:
-          url: /api/completeadoption?petId={{ item }}&petType=puppy&userId=user007
+          url: /adoptions
           method: POST
-          body: ''
+          headers:
+              Content-Type: application/json
+          body: '{"pet_id": "{{ item }}", "pet_type": "puppy", "user_id": "user007"}'
       with_items:
           - '001'
           - '002'
@@ -64,6 +70,5 @@ plan:
 
     - name: Cleanup Adoptions
       request:
-          url: /api/cleanupadoptions
-          method: POST
-          body: ''
+          url: /adoptions?user_id=user007
+          method: DELETE

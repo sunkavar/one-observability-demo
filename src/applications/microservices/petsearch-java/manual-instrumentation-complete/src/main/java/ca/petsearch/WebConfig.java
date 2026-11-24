@@ -107,7 +107,8 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(new TracingRequestInterceptor(openTelemetry, tracer));
+        registry.addInterceptor(new TracingRequestInterceptor(openTelemetry, tracer))
+                .excludePathPatterns("/health/status");
         WebMvcConfigurer.super.addInterceptors(registry);
     }
 
@@ -145,7 +146,7 @@ public class WebConfig implements WebMvcConfigurer {
     public FilterRegistrationBean<ApplicationFilter> filterRegistrationBean(MetricEmitter metricEmitter) {
         FilterRegistrationBean<ApplicationFilter> filterBean = new FilterRegistrationBean<>();
         filterBean.setFilter(new ApplicationFilter(metricEmitter));
-        filterBean.setUrlPatterns(Arrays.asList("/api/search"));
+        filterBean.setUrlPatterns(Arrays.asList("/pets", "/pets/*"));
         return filterBean;
     }
 

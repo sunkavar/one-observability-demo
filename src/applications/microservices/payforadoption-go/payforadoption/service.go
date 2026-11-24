@@ -50,7 +50,7 @@ func (s service) HealthCheck(ctx context.Context) error {
 	return nil
 }
 
-// /api/completeadoption logic
+// POST /adoptions logic
 func (s service) CompleteAdoption(ctx context.Context, petId, petType, userID string) (Adoption, error) {
 	logger := log.With(s.logger, "method", "CompleteAdoption")
 

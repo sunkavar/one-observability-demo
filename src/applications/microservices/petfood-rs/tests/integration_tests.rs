@@ -32,7 +32,7 @@ async fn test_food_api_endpoints() {
     };
 
     let response = client
-        .post(&format!("{}/api/admin/foods", base_url))
+        .post(&format!("{}/admin/foods", base_url))
         .json(&create_request)
         .send()
         .await
@@ -45,7 +45,7 @@ async fn test_food_api_endpoints() {
 
     // Test getting the created food
     let response = client
-        .get(&format!("{}/api/foods/{}", base_url, created_food.id))
+        .get(&format!("{}/foods/{}", base_url, created_food.id))
         .send()
         .await
         .expect("Failed to send request");
@@ -56,7 +56,7 @@ async fn test_food_api_endpoints() {
 
     // Test listing foods
     let response = client
-        .get(&format!("{}/api/foods", base_url))
+        .get(&format!("{}/foods", base_url))
         .send()
         .await
         .expect("Failed to send request");
@@ -79,7 +79,7 @@ async fn test_food_api_endpoints() {
     };
 
     let response = client
-        .put(&format!("{}/api/admin/foods/{}", base_url, created_food.id))
+        .put(&format!("{}/admin/foods/{}", base_url, created_food.id))
         .json(&update_request)
         .send()
         .await
@@ -92,7 +92,7 @@ async fn test_food_api_endpoints() {
 
     // Test deleting the food
     let response = client
-        .delete(&format!("{}/api/admin/foods/{}", base_url, created_food.id))
+        .delete(&format!("{}/admin/foods/{}", base_url, created_food.id))
         .send()
         .await
         .expect("Failed to send request");
@@ -101,7 +101,7 @@ async fn test_food_api_endpoints() {
 
     // Verify food is soft deleted (should return 404 for regular get)
     let response = client
-        .get(&format!("{}/api/foods/{}", base_url, created_food.id))
+        .get(&format!("{}/foods/{}", base_url, created_food.id))
         .send()
         .await
         .expect("Failed to send request");
@@ -121,7 +121,7 @@ async fn test_cart_endpoints() {
 
     // Get available foods to add to cart
     let response = client
-        .get(&format!("{}/api/foods", base_url))
+        .get(&format!("{}/foods", base_url))
         .send()
         .await
         .expect("Failed to send request");
@@ -141,7 +141,7 @@ async fn test_cart_endpoints() {
     };
 
     let response = client
-        .post(&format!("{}/api/cart/{}/items", base_url, user_id))
+        .post(&format!("{}/carts/{}/items", base_url, user_id))
         .json(&add_item_request)
         .send()
         .await
@@ -151,7 +151,7 @@ async fn test_cart_endpoints() {
 
     // Test getting cart
     let response = client
-        .get(&format!("{}/api/cart/{}", base_url, user_id))
+        .get(&format!("{}/carts/{}", base_url, user_id))
         .send()
         .await
         .expect("Failed to send request");
@@ -164,10 +164,7 @@ async fn test_cart_endpoints() {
 
     // Test updating cart item quantity
     let response = client
-        .put(&format!(
-            "{}/api/cart/{}/items/{}",
-            base_url, user_id, food_id
-        ))
+        .put(&format!("{}/carts/{}/items/{}", base_url, user_id, food_id))
         .json(&json!({"quantity": 5}))
         .send()
         .await
@@ -177,7 +174,7 @@ async fn test_cart_endpoints() {
 
     // Verify quantity was updated
     let response = client
-        .get(&format!("{}/api/cart/{}", base_url, user_id))
+        .get(&format!("{}/carts/{}", base_url, user_id))
         .send()
         .await
         .expect("Failed to send request");
@@ -187,10 +184,7 @@ async fn test_cart_endpoints() {
 
     // Test removing item from cart
     let response = client
-        .delete(&format!(
-            "{}/api/cart/{}/items/{}",
-            base_url, user_id, food_id
-        ))
+        .delete(&format!("{}/carts/{}/items/{}", base_url, user_id, food_id))
         .send()
         .await
         .expect("Failed to send request");
@@ -199,7 +193,7 @@ async fn test_cart_endpoints() {
 
     // Verify item was removed
     let response = client
-        .get(&format!("{}/api/cart/{}", base_url, user_id))
+        .get(&format!("{}/carts/{}", base_url, user_id))
         .send()
         .await
         .expect("Failed to send request");
@@ -233,7 +227,7 @@ async fn test_admin_endpoints() {
 
     // Test seeding data
     let response = client
-        .post(&format!("{}/api/admin/seed", base_url))
+        .post(&format!("{}/admin/seed", base_url))
         .send()
         .await
         .expect("Failed to send request");
@@ -244,7 +238,7 @@ async fn test_admin_endpoints() {
 
     // Verify data was seeded
     let response = client
-        .get(&format!("{}/api/foods", base_url))
+        .get(&format!("{}/foods", base_url))
         .send()
         .await
         .expect("Failed to send request");
@@ -258,7 +252,7 @@ async fn test_admin_endpoints() {
 
     // Test cleanup
     let response = client
-        .post(&format!("{}/api/admin/cleanup", base_url))
+        .post(&format!("{}/admin/cleanup", base_url))
         .send()
         .await
         .expect("Failed to send request");
@@ -267,7 +261,7 @@ async fn test_admin_endpoints() {
 
     // Verify data was cleaned up
     let response = client
-        .get(&format!("{}/api/foods", base_url))
+        .get(&format!("{}/foods", base_url))
         .send()
         .await
         .expect("Failed to send request");
@@ -288,7 +282,7 @@ async fn test_error_handling() {
 
     // Test 404 for non-existent food
     let response = client
-        .get(&format!("{}/api/foods/non-existent-id", base_url))
+        .get(&format!("{}/foods/non-existent-id", base_url))
         .send()
         .await
         .expect("Failed to send request");
@@ -301,7 +295,7 @@ async fn test_error_handling() {
     });
 
     let response = client
-        .post(&format!("{}/api/admin/foods", base_url))
+        .post(&format!("{}/admin/foods", base_url))
         .json(&invalid_request)
         .send()
         .await

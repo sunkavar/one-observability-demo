@@ -16,7 +16,7 @@ async fn test_complete_user_journey() {
 
     // Step 1: Admin seeds the database with food data
     let response = client
-        .post(&format!("{}/api/admin/seed", base_url))
+        .post(&format!("{}/admin/seed", base_url))
         .send()
         .await
         .expect("Failed to seed data");
@@ -25,7 +25,7 @@ async fn test_complete_user_journey() {
 
     // Step 2: User gets recommendations for their puppy
     let response = client
-        .get(&format!("{}/api/recommendations/puppy", base_url))
+        .get(&format!("{}/recommendations/puppy", base_url))
         .send()
         .await
         .expect("Failed to get recommendations");
@@ -43,7 +43,7 @@ async fn test_complete_user_journey() {
     // Step 3: User searches for specific food types
     let response = client
         .get(&format!(
-            "{}/api/foods?food_type=dry&pet_type=puppy",
+            "{}/foods?food_type=dry&pet_type=puppy",
             base_url
         ))
         .send()
@@ -69,7 +69,7 @@ async fn test_complete_user_journey() {
     // Step 4: User views details of a specific food
     let first_food_id = foods[0]["id"].as_str().expect("Expected id");
     let response = client
-        .get(&format!("{}/api/foods/{}", base_url, first_food_id))
+        .get(&format!("{}/foods/{}", base_url, first_food_id))
         .send()
         .await
         .expect("Failed to get food details");
@@ -86,7 +86,7 @@ async fn test_complete_user_journey() {
     };
 
     let response = client
-        .post(&format!("{}/api/cart/{}/items", base_url, user_id))
+        .post(&format!("{}/carts/{}/items", base_url, user_id))
         .json(&add_item_request)
         .send()
         .await
@@ -103,7 +103,7 @@ async fn test_complete_user_journey() {
         };
 
         let response = client
-            .post(&format!("{}/api/cart/{}/items", base_url, user_id))
+            .post(&format!("{}/carts/{}/items", base_url, user_id))
             .json(&add_item_request)
             .send()
             .await
@@ -114,7 +114,7 @@ async fn test_complete_user_journey() {
 
     // Step 7: User reviews their cart
     let response = client
-        .get(&format!("{}/api/cart/{}", base_url, user_id))
+        .get(&format!("{}/carts/{}", base_url, user_id))
         .send()
         .await
         .expect("Failed to get cart");
@@ -127,7 +127,7 @@ async fn test_complete_user_journey() {
     // Step 8: User updates quantity of an item
     let response = client
         .put(&format!(
-            "{}/api/cart/{}/items/{}",
+            "{}/carts/{}/items/{}",
             base_url, user_id, first_food_id
         ))
         .json(&json!({"quantity": 3}))
@@ -140,7 +140,7 @@ async fn test_complete_user_journey() {
     // Step 9: User removes an item from cart
     let response = client
         .delete(&format!(
-            "{}/api/cart/{}/items/{}",
+            "{}/carts/{}/items/{}",
             base_url, user_id, first_food_id
         ))
         .send()
@@ -151,7 +151,7 @@ async fn test_complete_user_journey() {
 
     // Step 10: User clears their cart
     let response = client
-        .delete(&format!("{}/api/cart/{}", base_url, user_id))
+        .delete(&format!("{}/carts/{}", base_url, user_id))
         .send()
         .await
         .expect("Failed to clear cart");
@@ -160,7 +160,7 @@ async fn test_complete_user_journey() {
 
     // Verify cart is empty
     let response = client
-        .get(&format!("{}/api/cart/{}", base_url, user_id))
+        .get(&format!("{}/carts/{}", base_url, user_id))
         .send()
         .await
         .expect("Failed to get cart");
@@ -184,7 +184,7 @@ async fn test_concurrent_user_operations() {
 
     // Get available foods
     let response = client
-        .get(&format!("{}/api/foods", base_url))
+        .get(&format!("{}/foods", base_url))
         .send()
         .await
         .expect("Failed to get foods");
@@ -211,7 +211,7 @@ async fn test_concurrent_user_operations() {
             };
 
             let response = client
-                .post(&format!("{}/api/cart/{}/items", base_url, user_id))
+                .post(&format!("{}/carts/{}/items", base_url, user_id))
                 .json(&add_item_request)
                 .send()
                 .await
@@ -221,7 +221,7 @@ async fn test_concurrent_user_operations() {
 
             // Get cart
             let response = client
-                .get(&format!("{}/api/cart/{}", base_url, user_id))
+                .get(&format!("{}/carts/{}", base_url, user_id))
                 .send()
                 .await
                 .expect("Failed to get cart");
@@ -232,10 +232,7 @@ async fn test_concurrent_user_operations() {
 
             // Update quantity
             let response = client
-                .put(&format!(
-                    "{}/api/cart/{}/items/{}",
-                    base_url, user_id, food_id
-                ))
+                .put(&format!("{}/carts/{}/items/{}", base_url, user_id, food_id))
                 .json(&json!({"quantity": 2}))
                 .send()
                 .await
@@ -245,7 +242,7 @@ async fn test_concurrent_user_operations() {
 
             // Clear cart
             let response = client
-                .delete(&format!("{}/api/cart/{}", base_url, user_id))
+                .delete(&format!("{}/carts/{}", base_url, user_id))
                 .send()
                 .await
                 .expect("Failed to clear cart");
@@ -272,7 +269,7 @@ async fn test_error_recovery_workflow() {
 
     // Try to get cart for non-existent user (should create empty cart)
     let response = client
-        .get(&format!("{}/api/cart/{}", base_url, user_id))
+        .get(&format!("{}/carts/{}", base_url, user_id))
         .send()
         .await
         .expect("Failed to get cart");
@@ -288,7 +285,7 @@ async fn test_error_recovery_workflow() {
     };
 
     let response = client
-        .post(&format!("{}/api/cart/{}/items", base_url, user_id))
+        .post(&format!("{}/carts/{}/items", base_url, user_id))
         .json(&add_item_request)
         .send()
         .await
@@ -298,7 +295,7 @@ async fn test_error_recovery_workflow() {
 
     // Try to get non-existent food
     let response = client
-        .get(&format!("{}/api/foods/non-existent-food", base_url))
+        .get(&format!("{}/foods/non-existent-food", base_url))
         .send()
         .await
         .expect("Failed to get food");

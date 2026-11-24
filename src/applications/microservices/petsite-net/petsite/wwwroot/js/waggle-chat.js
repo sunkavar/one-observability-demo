@@ -361,7 +361,7 @@
             if (typeof options.onSend === 'function') options.onSend();
 
             try {
-                var response = await fetch('/Waggle/SendMessage', {
+                var response = await fetch('/waggle/messages', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ message: message, userId: userId, sessionId: state.sessionId })
