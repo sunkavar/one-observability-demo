@@ -71,6 +71,7 @@ namespace PetSite.Controllers
             {
                 if (EnsureUserId()) return new EmptyResult();
             }
+            TagUserId(userId);
 
             try
             {
@@ -104,6 +105,7 @@ namespace PetSite.Controllers
         [HttpGet("/cart/count")]
         public async Task<IActionResult> GetCartCount(string userId)
         {
+            TagUserId(userId);
             var totalItems = await GetCartItemCountAsync(userId);
             return Ok(new { totalItems });
         }

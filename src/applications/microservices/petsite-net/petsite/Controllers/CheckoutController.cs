@@ -53,6 +53,7 @@ namespace PetSite.Controllers
             try
             {
                 userId = requestData.GetProperty("userId").GetString();
+                TagUserId(userId);
 
                 using var httpClient = _httpClientFactory.CreateClient();
                 var cartApiUrl = await ParameterNames.GetParameterValueAsync(ParameterNames.CART_API_URL, _refreshManager);
@@ -96,6 +97,7 @@ namespace PetSite.Controllers
         [HttpPost("/cart/clear")]
         public async Task<IActionResult> ClearCart(string userId)
         {
+            TagUserId(userId);
             try
             {
                 await ClearCartAsync(userId);
@@ -113,6 +115,7 @@ namespace PetSite.Controllers
         [HttpDelete("/cart/items/{food_id}")]
         public async Task<IActionResult> RemoveItem([FromRoute(Name = "food_id")] string foodId, [FromQuery] string userId)
         {
+            TagUserId(userId);
             try
             {
                 using var httpClient = _httpClientFactory.CreateClient();

@@ -48,13 +48,19 @@ namespace PetSite.Controllers
             ViewBag.UserId = userId;
             ViewData["UserId"] = userId;
 
+            TagUserId(userId);
+
+            return false;
+        }
+
+        /// <summary>Sets user.id on the current span, for actions that read userId from the form or body.</summary>
+        protected static void TagUserId(string userId)
+        {
             var currentActivity = Activity.Current;
-            if (currentActivity != null && !currentActivity.Tags.Any(tag => tag.Key == "user.id"))
+            if (!string.IsNullOrEmpty(userId) && currentActivity != null && !currentActivity.Tags.Any(tag => tag.Key == "user.id"))
             {
                 currentActivity.SetTag("user.id", userId);
             }
-
-            return false;
         }
     }
 }
