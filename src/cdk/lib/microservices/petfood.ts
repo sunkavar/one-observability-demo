@@ -31,6 +31,7 @@ import { NagSuppressions } from 'cdk-nag';
 import { Utilities } from '../utils/utilities';
 import { ITable } from 'aws-cdk-lib/aws-dynamodb';
 import { IBucket } from 'aws-cdk-lib/aws-s3';
+import { IEventBus } from 'aws-cdk-lib/aws-events';
 import { Stack } from 'aws-cdk-lib';
 
 /** Properties for the Pet Food ECS service, extending base ECS service configuration. */
@@ -41,6 +42,8 @@ export interface PetFoodProperties extends EcsServiceProperties {
     petFoodCartTable: ITable;
     /** S3 bucket containing food images served via CloudFront */
     assetsBucket: IBucket;
+    /** Event bus the service publishes stock purchase events to */
+    eventBus: IEventBus;
 }
 
 /**
@@ -133,6 +136,7 @@ export class PetFoodECSService extends EcsService {
         properties.petFoodTable.grantReadWriteData(this.taskRole);
         properties.petFoodCartTable.grantReadWriteData(this.taskRole);
         properties.assetsBucket.grantReadWrite(this.taskRole);
+        properties.eventBus.grantPutEventsTo(this.taskRole);
 
         this.taskRole.addManagedPolicy(
             ManagedPolicy.fromAwsManagedPolicyName('service-role/AmazonECSTaskExecutionRolePolicy'),
