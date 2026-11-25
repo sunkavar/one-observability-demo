@@ -75,6 +75,7 @@ namespace PetSite.Controllers
             [FromForm(Name = "pet_type")] string petType, string userId)
         {
             if (string.IsNullOrEmpty(userId)) EnsureUserId();
+            TagUserId(userId);
 
             var currentActivity = Activity.Current;
             if (currentActivity != null)

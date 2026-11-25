@@ -67,6 +67,7 @@ namespace PetSite.Controllers
             [FromForm(Name = "pet_type")] string petType, [FromForm(Name = "pet_color")] string petColor, string userId)
         {
             if(string.IsNullOrEmpty(userId)) EnsureUserId();
+            TagUserId(userId);
 
             var currentActivity = Activity.Current;
             if (currentActivity != null)
@@ -91,7 +92,7 @@ namespace PetSite.Controllers
                         activity.SetTag("pet.color", petColor);
                     }
                     _logger.LogInformation($"Inside TakeMeHome with - pet_type: {petType}, pet_color: {petColor}, pet_id: {petId} - for user: {userId}");
-                    selectedPet = await _petSearchService.GetPet(petId, "userxxx");
+                    selectedPet = await _petSearchService.GetPet(petId, userId);
                 }
             }
             catch (Exception e)
